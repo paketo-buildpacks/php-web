@@ -1,0 +1,11 @@
+
+[buildpack]
+id = "org.cloudfoundry.buildpacks.php-apps"
+name = "PHP Apps Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.cflinuxfs3"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
