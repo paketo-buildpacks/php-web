@@ -75,6 +75,10 @@ func (c Contributor) Contribute() error {
 		}
 		c.logger.SubsequentLine("Using web directory: %s", c.webdir)
 
+		if len(c.webserver) == 0 {
+			c.webserver = PhpWebServer
+		}
+
 		if strings.ToLower(c.webserver) == PhpWebServer {
 			c.logger.SubsequentLine("Using PHP built-in server")
 			webdir := filepath.Join(c.application.Root, c.webdir)
@@ -87,10 +91,12 @@ func (c Contributor) Contribute() error {
 				},
 			})
 		}
+
 		if strings.ToLower(c.webserver) == ApacheHttpd {
 			// TODO: write out httpd.conf to c.application.Root
 			c.logger.SubsequentLine("Using Apache Web Server")
 		}
+
 		if strings.ToLower(c.webserver) == Nginx {
 			// TODO: write out nginx.conf to c.application.Root
 			c.logger.SubsequentLine("Using Nginx")
@@ -124,5 +130,6 @@ func (c Contributor) Contribute() error {
 		})
 	}
 
+	c.logger.Info("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")
 	return nil
 }

@@ -79,6 +79,20 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		}))
 	})
 
+	it("starts a web app and defaults to `php -S`", func() {
+		c.isWebApp = true
+
+		Expect(c.Contribute()).To(Succeed())
+
+		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "htdocs")
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		}))
+	})
+
 	it("starts a web app with HTTPD", func() {
 		// TODO
 	})
