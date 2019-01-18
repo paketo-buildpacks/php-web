@@ -17,10 +17,13 @@
 package phpapp
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
+	bplogger "github.com/buildpack/libbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -111,5 +114,17 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 				{"task", command},
 			},
 		}))
+	})
+
+	it("logs a warning when start script does not exist", func() {
+		debug := &bytes.Buffer{}
+		info := &bytes.Buffer{}
+
+		c.logger = logger.Logger{Logger: bplogger.NewLogger(debug, info)}
+		c.isScript = true
+		c.script = "does/not/exist.php"
+
+		Expect(c.Contribute()).To(Succeed())
+		Expect(info.String()).To(ContainSubstring("WARNING: `does/not/exist.php` start script not found. App will not start unless you specify a custom start command."))
 	})
 }

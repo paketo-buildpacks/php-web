@@ -23,6 +23,7 @@ import (
 
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/build"
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/php-cnb/php"
@@ -102,8 +103,18 @@ func (c Contributor) Contribute() error {
 		if len(c.script) == 0 {
 			c.script = "app.php"
 		}
+		scriptPath := filepath.Join(c.application.Root, c.script)
 
-		command := fmt.Sprintf("php %s", filepath.Join(c.application.Root, c.script))
+		scriptExists, err := helper.FileExists(scriptPath)
+		if err != nil {
+			return err
+		}
+
+		if !scriptExists {
+			c.logger.Info("WARNING: `%s` start script not found. App will not start unless you specify a custom start command.", c.script)
+		}
+
+		command := fmt.Sprintf("php %s", scriptPath)
 
 		return c.layers.WriteMetadata(layers.Metadata{
 			Processes: []layers.Process{
