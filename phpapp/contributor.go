@@ -17,56 +17,48 @@
 package phpapp
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
+
+	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/php-cnb/php"
 )
 
 // Contributor represents a PHP contribution by the buildpack
 type Contributor struct {
-	launchContribution bool
-	buildContribution  bool
-	phpAppLayer        layers.DependencyLayer
-	appRoot            string
-	webdir             string
-	webserver          string
+	application application.Application
+	layers      layers.Layers
+	logger      logger.Logger
+	isWebApp    bool
+	isScript    bool
+	webserver   string
+	webdir      string
+	script      string
 }
 
-// NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-binary" dependency, otherwise false.
+// NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
 func NewContributor(context build.Build) (c Contributor, willContribute bool, err error) {
-	plan, wantDependency := context.BuildPlan[Dependency]
-	if !wantDependency {
-		return Contributor{}, false, nil
-	}
-
-	deps, err := context.Buildpack.Dependencies()
-	if err != nil {
-		return Contributor{}, false, err
-	}
-
 	buildpackYAML, err := php.LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return Contributor{}, false, err
 	}
 
-	version := php.Version(buildpackYAML, context.Buildpack, plan)
-
-	dep, err := deps.Best(Dependency, version, context.Stack)
-	if err != nil {
-		return Contributor{}, false, err
-	}
+	_, isWebApp := context.BuildPlan[WebDependency]
+	_, isScript := context.BuildPlan[ScriptDependency]
 
 	contributor := Contributor{
-		appRoot:     context.Application.Root,
-		phpAppLayer: context.Layers.DependencyLayer(dep),
-	}
-
-	if _, ok := plan.Metadata["launch"]; ok {
-		contributor.launchContribution = true
-	}
-
-	if _, ok := plan.Metadata["build"]; ok {
-		contributor.buildContribution = true
+		application: context.Application,
+		layers:      context.Layers,
+		logger:      context.Logger,
+		isWebApp:    isWebApp,
+		isScript:    isScript,
+		webserver:   buildpackYAML.Config.WebServer,
+		webdir:      buildpackYAML.Config.WebDirectory,
+		script:      buildpackYAML.Config.Script,
 	}
 
 	return contributor, true, nil
@@ -74,23 +66,52 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 
 // Contribute contributes an expanded PHP to a cache layer.
 func (c Contributor) Contribute() error {
-	return c.phpAppLayer.Contribute(func(artifact string, layer layers.DependencyLayer) error {
-		layer.Logger.SubsequentLine("<TODO> to %s", layer.Root)
+	if c.isWebApp {
+		c.logger.FirstLine("Configuring PHP Web Application")
 
-		return nil
-	}, c.flags()...)
-}
+		if len(c.webdir) == 0 {
+			c.webdir = "htdocs"
+		}
+		c.logger.SubsequentLine("Using web directory: %s", c.webdir)
 
-func (c Contributor) flags() []layers.Flag {
-	var flags []layers.Flag
+		if strings.ToLower(c.webserver) == PhpWebServer {
+			c.logger.SubsequentLine("Using PHP built-in server")
+			webdir := filepath.Join(c.application.Root, c.webdir)
+			command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s", webdir)
 
-	if c.buildContribution {
-		flags = append(flags, layers.Build, layers.Cache)
+			return c.layers.WriteMetadata(layers.Metadata{
+				Processes: []layers.Process{
+					{"web", command},
+					{"task", command},
+				},
+			})
+		}
+		if strings.ToLower(c.webserver) == ApacheHttpd {
+			// TODO: write out httpd.conf to c.application.Root
+			c.logger.SubsequentLine("Using Apache Web Server")
+		}
+		if strings.ToLower(c.webserver) == Nginx {
+			// TODO: write out nginx.conf to c.application.Root
+			c.logger.SubsequentLine("Using Nginx")
+		}
 	}
 
-	if c.launchContribution {
-		flags = append(flags, layers.Launch)
+	if c.isScript {
+		c.logger.FirstLine("Configuring PHP Script")
+
+		if len(c.script) == 0 {
+			c.script = "app.php"
+		}
+
+		command := fmt.Sprintf("php %s", filepath.Join(c.application.Root, c.script))
+
+		return c.layers.WriteMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		})
 	}
 
-	return flags
+	return nil
 }

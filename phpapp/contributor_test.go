@@ -17,9 +17,10 @@
 package phpapp
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -33,23 +34,82 @@ func TestUnitContributor(t *testing.T) {
 
 func testContributor(t *testing.T, when spec.G, it spec.S) {
 	var f *test.BuildFactory
+	var c Contributor
 
 	it.Before(func() {
 		f = test.NewBuildFactory(t)
+		c = Contributor{
+			application: f.Build.Application,
+			layers:      f.Build.Layers,
+			logger:      f.Build.Logger,
+		}
 	})
 
-	it("returns true if build plan exists", func() {
-		// f.AddDependency(Dependency, stubPHPFixture)
-		f.AddBuildPlan(Dependency, buildplan.Dependency{})
+	it("starts a web app with `php -S`", func() {
+		c.isWebApp = true
+		c.webserver = PhpWebServer
 
-		_, ok, err := NewContributor(f.Build)
-		Expect(ok).To(BeTrue())
-		Expect(err).NotTo(HaveOccurred())
+		Expect(c.Contribute()).To(Succeed())
+
+		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "htdocs")
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		}))
 	})
 
-	it("returns false if build plan does not exist", func() {
-		_, ok, err := NewContributor(f.Build)
-		Expect(ok).To(BeFalse())
-		Expect(err).NotTo(HaveOccurred())
+	it("starts a web app with a custom webdir", func() {
+		c.isWebApp = true
+		c.webserver = PhpWebServer
+		c.webdir = "public"
+
+		Expect(c.Contribute()).To(Succeed())
+
+		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "public")
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		}))
+	})
+
+	it("starts a web app with HTTPD", func() {
+		// TODO
+	})
+
+	it("starts a web app with Nginx", func() {
+		// TODO
+	})
+
+	it("starts a script using default `app.php`", func() {
+		c.isScript = true
+
+		Expect(c.Contribute()).To(Succeed())
+
+		command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "app.php")
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		}))
+	})
+
+	it("starts a script using custom script path/name", func() {
+		c.isScript = true
+		c.script = "relative/path/to/my/script.php"
+
+		Expect(c.Contribute()).To(Succeed())
+
+		command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "relative/path/to/my/script.php")
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+				{"task", command},
+			},
+		}))
 	})
 }

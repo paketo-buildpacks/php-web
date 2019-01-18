@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cloudfoundry/php-app-cnb/phpapp"
+
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )
@@ -41,6 +43,18 @@ func main() {
 
 func runBuild(context build.Build) (int, error) {
 	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
+
+	phpapp, willContribute, err := phpapp.NewContributor(context)
+	if err != nil {
+		return context.Failure(102), err
+	}
+
+	if willContribute {
+		err := phpapp.Contribute()
+		if err != nil {
+			return context.Failure(103), err
+		}
+	}
 
 	return context.Success(buildplan.BuildPlan{})
 }
