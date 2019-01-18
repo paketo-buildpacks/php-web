@@ -19,9 +19,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/cloudfoundry/php-app-cnb/phpapp"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
+	"github.com/cloudfoundry/php-cnb/php"
 )
 
 func main() {
@@ -39,6 +45,92 @@ func main() {
 	os.Exit(code)
 }
 
+func pickWebDir(buildpackYAML php.BuildpackYAML) string {
+	if buildpackYAML.Config.WebDirectory != "" {
+		return buildpackYAML.Config.WebDirectory
+	}
+
+	return "htdocs"
+}
+
+func searchForWebApp(appRoot string, webdir string) (bool, error) {
+	matchList, err := filepath.Glob(filepath.Join(appRoot, webdir, "*.php"))
+	if err != nil {
+		return false, err
+	}
+
+	if len(matchList) > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func searchForScript(appRoot string, log logger.Logger) (bool, error) {
+	found := false
+
+	err := filepath.Walk(appRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Info("failure accessing a path %q: %v\n", path, err)
+			return filepath.SkipDir
+		}
+
+		if found {
+			return filepath.SkipDir
+		}
+
+		if !info.IsDir() && strings.HasSuffix(info.Name(), ".php") {
+			found = true
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
+}
+
 func runDetect(context detect.Detect) (int, error) {
-	return context.Pass(buildplan.BuildPlan{})
+	buildpackYAML, err := php.LoadBuildpackYAML(context.Application.Root)
+	if err != nil {
+		return context.Fail(), err
+	}
+
+	webdir := pickWebDir(buildpackYAML)
+
+	webAppFound, err := searchForWebApp(context.Application.Root, webdir)
+	if err != nil {
+		return context.Fail(), err
+	}
+
+	if webAppFound {
+		return context.Pass(buildplan.BuildPlan{
+			php.Dependency: buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					"launch": true,
+				},
+			},
+			phpapp.WebDependency: buildplan.Dependency{},
+		})
+	}
+
+	scriptFound, err := searchForScript(context.Application.Root, context.Logger)
+	if err != nil {
+		return context.Fail(), err
+	}
+
+	if scriptFound {
+		return context.Pass(buildplan.BuildPlan{
+			php.Dependency: buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					"launch": true,
+				},
+			},
+			phpapp.ScriptDependency: buildplan.Dependency{},
+		})
+	}
+
+	return context.Fail(), nil
 }
