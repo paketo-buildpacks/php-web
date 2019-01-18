@@ -30,7 +30,7 @@ If the build plan contains
 
 - `php-web`
   - looks at `buildpack.yml` for `php.webserver`, if
-    - `standalone`, contribute a web process type using `php -S`
+    - `php-server`, contribute a web process type using `php -S`
     - `httpd`, generate a suitable `httpd.conf`
     - `nginx`, generate a suitable `nginx.conf`
 
