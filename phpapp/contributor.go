@@ -21,7 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/php-app-cnb/config"
+
 	"github.com/buildpack/libbuildpack/application"
+	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -34,6 +37,7 @@ type Contributor struct {
 	application application.Application
 	layers      layers.Layers
 	logger      logger.Logger
+	phpDep      buildplan.Dependency
 	isWebApp    bool
 	isScript    bool
 	webserver   string
@@ -50,11 +54,13 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 
 	_, isWebApp := context.BuildPlan[WebDependency]
 	_, isScript := context.BuildPlan[ScriptDependency]
+	phpDep, _ := context.BuildPlan[php.Dependency]
 
 	contributor := Contributor{
 		application: context.Application,
 		layers:      context.Layers,
 		logger:      context.Logger,
+		phpDep:      phpDep,
 		isWebApp:    isWebApp,
 		isScript:    isScript,
 		webserver:   buildpackYAML.Config.WebServer,
@@ -67,6 +73,18 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 
 // Contribute contributes an expanded PHP to a cache layer.
 func (c Contributor) Contribute() error {
+	phpLayer := c.layers.Layer(php.Dependency)
+
+	// Write out php.ini
+	phpIniCfg := config.PhpIniConfig{
+		PhpHome: phpLayer.Root,
+		PhpAPI:  php.API(c.phpDep.Version),
+	}
+	phpIniPath := filepath.Join(phpLayer.Root, "etc", "php.ini")
+	if err := config.ProcessTemplateToFile(config.PhpIniTemplate, phpIniPath, phpIniCfg); err != nil {
+		return err
+	}
+
 	if c.isWebApp {
 		c.logger.FirstLine("Configuring PHP Web Application")
 
@@ -93,8 +111,45 @@ func (c Contributor) Contribute() error {
 		}
 
 		if strings.ToLower(c.webserver) == ApacheHttpd {
-			// TODO: write out httpd.conf to c.application.Root
 			c.logger.SubsequentLine("Using Apache Web Server")
+
+			// Write out httpd.conf
+			//TODO: pull some of this config from buildpack.yml
+			httpdCfg := config.HttpdConfig{
+				ServerAdmin:  "test@example.org",
+				WebDirectory: "htdocs",
+				FpmSocket:    "127.0.0.1:9000",
+			}
+
+			httpdConfPath := filepath.Join(c.application.Root, "httpd.conf")
+			if err := config.ProcessTemplateToFile(config.HttpdConfTemplate, httpdConfPath, httpdCfg); err != nil {
+				return err
+			}
+
+			// Write out php-fpm.conf
+			//TODO: pull some of this config from buildpack.yml
+			phpFpmCfg := config.PhpFpmConfig{
+				PhpHome: phpLayer.Root,
+				PhpAPI:  php.API(c.phpDep.Version),
+				Include: "",
+				Listen:  "",
+			}
+
+			phpFpmConfPath := filepath.Join(phpLayer.Root, "etc", "php-fpm.conf")
+			if err := config.ProcessTemplateToFile(config.PhpFpmConfTemplate, phpFpmConfPath, phpFpmCfg); err != nil {
+				return err
+			}
+
+			command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
+				phpLayer.Root,
+				filepath.Join(phpLayer.Root, "etc", "php-fpm.conf"),
+				filepath.Join(phpLayer.Root, "etc"))
+
+			return c.layers.WriteMetadata(layers.Metadata{
+				Processes: []layers.Process{
+					{"web", command},
+				},
+			})
 		}
 
 		if strings.ToLower(c.webserver) == Nginx {

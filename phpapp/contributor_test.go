@@ -19,12 +19,14 @@ package phpapp
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	bplogger "github.com/buildpack/libbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
+	"github.com/cloudfoundry/php-cnb/php"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -40,12 +42,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 	var c Contributor
 
 	it.Before(func() {
+		var err error
 		f = test.NewBuildFactory(t)
-		c = Contributor{
-			application: f.Build.Application,
-			layers:      f.Build.Layers,
-			logger:      f.Build.Logger,
-		}
+		c, _, err = NewContributor(f.Build)
+		Expect(err).To(Not(HaveOccurred()))
 	})
 
 	it("starts a web app with `php -S`", func() {
@@ -91,6 +91,25 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 				{"task", command},
 			},
 		}))
+	})
+
+	it("contributes a php.ini file", func() {
+		c.isWebApp = true
+		c.webserver = PhpWebServer
+
+		layer := f.Build.Layers.Layer(php.Dependency)
+		Expect(c.Contribute()).To(Succeed())
+		Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+	})
+
+	it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
+		c.isWebApp = true
+		c.webserver = ApacheHttpd
+
+		layer := f.Build.Layers.Layer(php.Dependency)
+		Expect(c.Contribute()).To(Succeed())
+		Expect(filepath.Join(f.Build.Application.Root, "httpd.conf")).To(BeARegularFile())
+		Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
 	})
 
 	it("starts a web app with HTTPD", func() {

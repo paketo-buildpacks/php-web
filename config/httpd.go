@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package httpd
+package config
 
-import (
-	"bytes"
-	"text/template"
-)
-
-const body = `ServerRoot "${SERVER_ROOT}"
+// HttpdConfTemplate is the template string for a httpd.conf file
+const HttpdConfTemplate = `ServerRoot "${SERVER_ROOT}"
 Listen ${PORT}
 ServerAdmin "{{.ServerAdmin}}"
 ServerName "0.0.0.0"
@@ -149,26 +145,3 @@ Define fcgi-listener fcgi://{{.FpmSocket}}${HOME}/{{.WebDirectory}}
 
 RequestHeader unset Proxy early
 `
-
-// Template supplies values for templated httpd.conf
-type Template struct {
-	ServerAdmin  string
-	WebDirectory string
-	FpmSocket    string
-}
-
-// Populate creates a usable HTTPD Configuration for hosting PHP apps with HTTPD from the Template
-func (t Template) Populate() (string, error) {
-	tmpl, err := template.New("httpd").Parse(body)
-	if err != nil {
-		return "", err
-	}
-
-	var b bytes.Buffer
-	err = tmpl.Execute(&b, t)
-	if err != nil {
-		return "", err
-	}
-
-	return b.String(), nil
-}
