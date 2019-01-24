@@ -17,20 +17,21 @@
 package main
 
 import (
+	"github.com/cloudfoundry/httpd-cnb/httpd"
+	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-web-cnb/phpweb"
 	"path/filepath"
 	"testing"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"
-	"github.com/cloudfoundry/php-cnb/php"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 )
 
 func TestUnitDetect(t *testing.T) {
-	RegisterTestingT(t)
 	spec.Run(t, "Detect", testDetect, spec.Report(report.Terminal{}))
 }
 
@@ -38,17 +39,18 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 	var factory *test.DetectFactory
 
 	it.Before(func() {
+		RegisterTestingT(t)
 		factory = test.NewDetectFactory(t)
 	})
 
 	when("there is a PHP web app", func() {
 		it("defaults `php.webdir` to `htdocs`", func() {
-			Expect(pickWebDir(php.BuildpackYAML{})).To(Equal("htdocs"))
+			Expect(pickWebDir(phpweb.BuildpackYAML{})).To(Equal("htdocs"))
 		})
 
 		it("loads `php.webdir` from `buildpack.yml`", func() {
-			buildpackYAML := php.BuildpackYAML{
-				Config: php.Config{
+			buildpackYAML := phpweb.BuildpackYAML{
+				Config: phpweb.Config{
 					WebDirectory: "public",
 				},
 			}
@@ -71,6 +73,37 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it("sets the proper buildplan items", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
+			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
+			fakeVersion := "php.default.version"
+			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
+			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
+			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
+				"php-binary": buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						"launch": true,
+					},
+					Version: fakeVersion,
+				},
+				"php-web": buildplan.Dependency{},
+				"httpd": buildplan.Dependency{},
+			}))
+		})
+
+		it("defaults php.webserver to apache webserver", func(){
+			Expect(pickWebServer(phpweb.BuildpackYAML{})).To(Equal(httpd.Dependency))
+		})
+
+		it("will read php.webserver and select nginx", func(){
+			Expect(pickWebServer(phpweb.BuildpackYAML{Config:phpweb.Config{WebServer: "nginx",}})).
+				To(Equal("nginx"))
+		})
+
+		it("adjusts the buildplan webServer if non-default put in BuildpackYAML", func() {
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
+			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
+			fakeVersion := "php.default.version"
+			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), `{"php": {"webserver": "nginx"}}`)
 
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
 			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
@@ -78,9 +111,17 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					Metadata: buildplan.Metadata{
 						"launch": true,
 					},
+					Version: fakeVersion,
 				},
 				"php-web": buildplan.Dependency{},
+				"nginx": buildplan.Dependency{},
 			}))
+		})
+
+		it("fails if php-binary is not in the buildplan", func() {
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
+
+			Expect(runDetect(factory.Detect)).To(Equal(detect.FailStatusCode))
 		})
 	})
 
@@ -109,6 +150,9 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it("sets the proper buildplan items", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "app.php"), "")
+			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
+			fakeVersion := "php.default.version"
+			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
 			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
@@ -116,6 +160,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					Metadata: buildplan.Metadata{
 						"launch": true,
 					},
+					Version: fakeVersion,
 				},
 				"php-script": buildplan.Dependency{},
 			}))

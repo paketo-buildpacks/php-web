@@ -28,7 +28,6 @@ import (
 )
 
 func TestUnitPhpAppConfig(t *testing.T) {
-	RegisterTestingT(t)
 	spec.Run(t, "Httpd", testPhpAppConfig, spec.Report(report.Terminal{}))
 }
 
@@ -36,6 +35,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 	var f *test.BuildFactory
 
 	it.Before(func() {
+		RegisterTestingT(t)
 		f = test.NewBuildFactory(t)
 	})
 

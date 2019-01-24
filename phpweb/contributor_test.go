@@ -35,7 +35,6 @@ import (
 )
 
 func TestUnitContributor(t *testing.T) {
-	RegisterTestingT(t)
 	spec.Run(t, "Contributor", testContributor, spec.Report(report.Terminal{}))
 }
 
@@ -44,6 +43,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 	var c Contributor
 
 	it.Before(func() {
+		RegisterTestingT(t)
 		var err error
 		f = test.NewBuildFactory(t)
 		c, _, err = NewContributor(f.Build)

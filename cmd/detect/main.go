@@ -18,16 +18,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/httpd-cnb/httpd"
+	"github.com/cloudfoundry/php-cnb/php"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/php-web-cnb/phpweb"
-
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
-	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-web-cnb/phpweb"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 	os.Exit(code)
 }
 
-func pickWebDir(buildpackYAML php.BuildpackYAML) string {
+func pickWebDir(buildpackYAML phpweb.BuildpackYAML) string {
 	if buildpackYAML.Config.WebDirectory != "" {
 		return buildpackYAML.Config.WebDirectory
 	}
@@ -93,17 +93,24 @@ func searchForScript(appRoot string, log logger.Logger) (bool, error) {
 }
 
 func runDetect(context detect.Detect) (int, error) {
-	buildpackYAML, err := php.LoadBuildpackYAML(context.Application.Root)
+	buildpackYAML, err := phpweb.LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return context.Fail(), err
 	}
 
-	webdir := pickWebDir(buildpackYAML)
+	webDir := pickWebDir(buildpackYAML)
 
-	webAppFound, err := searchForWebApp(context.Application.Root, webdir)
+	webAppFound, err := searchForWebApp(context.Application.Root, webDir)
 	if err != nil {
 		return context.Fail(), err
 	}
+
+	plan, phpFound := context.BuildPlan[php.Dependency]
+	if !phpFound {
+		context.Logger.SubsequentLine("PHP not listed in build plan, and is required")
+		return context.Fail(), nil
+	}
+	version := phpweb.Version(buildpackYAML, context.Buildpack, plan)
 
 	if webAppFound {
 		return context.Pass(buildplan.BuildPlan{
@@ -111,8 +118,10 @@ func runDetect(context detect.Detect) (int, error) {
 				Metadata: buildplan.Metadata{
 					"launch": true,
 				},
+				Version: version,
 			},
 			phpweb.WebDependency: buildplan.Dependency{},
+			pickWebServer(buildpackYAML): buildplan.Dependency{},
 		})
 	}
 
@@ -127,10 +136,19 @@ func runDetect(context detect.Detect) (int, error) {
 				Metadata: buildplan.Metadata{
 					"launch": true,
 				},
+				Version: version,
 			},
 			phpweb.ScriptDependency: buildplan.Dependency{},
 		})
 	}
 
 	return context.Fail(), nil
+}
+
+func pickWebServer(bpYaml phpweb.BuildpackYAML) string {
+	webServer := httpd.Dependency
+	if len(bpYaml.Config.WebServer) > 0 {
+		webServer = bpYaml.Config.WebServer
+	}
+	return webServer
 }

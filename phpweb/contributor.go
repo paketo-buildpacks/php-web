@@ -37,7 +37,7 @@ type Contributor struct {
 	application   application.Application
 	layers        layers.Layers
 	logger        logger.Logger
-	buildpackYAML php.BuildpackYAML
+	buildpackYAML BuildpackYAML
 	phpDep        buildplan.Dependency
 	isWebApp      bool
 	isScript      bool
@@ -48,7 +48,7 @@ type Contributor struct {
 
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
 func NewContributor(context build.Build) (c Contributor, willContribute bool, err error) {
-	buildpackYAML, err := php.LoadBuildpackYAML(context.Application.Root)
+	buildpackYAML, err := LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return Contributor{}, false, err
 	}
@@ -76,7 +76,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 func (c Contributor) writePhpIni(layer layers.Layer) error {
 	phpIniCfg := config.PhpIniConfig{
 		PhpHome: layer.Root,
-		PhpAPI:  php.API(c.phpDep.Version),
+		PhpAPI:  API(c.phpDep.Version),
 	}
 	phpIniPath := filepath.Join(layer.Root, "etc", "php.ini")
 	if err := config.ProcessTemplateToFile(config.PhpIniTemplate, phpIniPath, phpIniCfg); err != nil {
@@ -116,7 +116,7 @@ func (c Contributor) writePhpFpmConf(layer layers.Layer) error {
 
 	phpFpmCfg := config.PhpFpmConfig{
 		PhpHome: layer.Root,
-		PhpAPI:  php.API(c.phpDep.Version),
+		PhpAPI:  API(c.phpDep.Version),
 		Include: userIncludePath,
 		Listen:  "127.0.0.1:9000",
 	}

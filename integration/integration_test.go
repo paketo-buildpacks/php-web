@@ -35,7 +35,6 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	RegisterTestingT(t)
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
@@ -72,6 +71,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	var builderMetadataWithHttpd dagger.BuilderMetadata
 
 	it.Before(func() {
+		RegisterTestingT(t)
 		uri, err := dagger.PackageBuildpack()
 		Expect(err).ToNot(HaveOccurred())
 
