@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/php-app-cnb/phpapp"
+	"github.com/cloudfoundry/php-web-cnb/phpweb"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
@@ -112,7 +112,7 @@ func runDetect(context detect.Detect) (int, error) {
 					"launch": true,
 				},
 			},
-			phpapp.WebDependency: buildplan.Dependency{},
+			phpweb.WebDependency: buildplan.Dependency{},
 		})
 	}
 
@@ -128,7 +128,7 @@ func runDetect(context detect.Detect) (int, error) {
 					"launch": true,
 				},
 			},
-			phpapp.ScriptDependency: buildplan.Dependency{},
+			phpweb.ScriptDependency: buildplan.Dependency{},
 		})
 	}
 

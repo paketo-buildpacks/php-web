@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package phpapp
+package phpweb
 
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	bplogger "github.com/buildpack/libbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
-	"github.com/cloudfoundry/php-cnb/php"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -79,41 +81,87 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		}))
 	})
 
-	it("starts a web app and defaults to `php -S`", func() {
+	it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
 		c.isWebApp = true
+		c.webserver = PhpWebServer
+
+		layer := f.Build.Layers.Layer(WebDependency)
+		Expect(c.Contribute()).To(Succeed())
+		Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+		Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
+		Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
+	})
+
+	it("contributes a php.ini file & configures PHP to look at it for a script", func() {
+		c.isScript = true
+
+		layer := f.Build.Layers.Layer(ScriptDependency)
+		Expect(c.Contribute()).To(Succeed())
+		Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+		Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
+		Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
+	})
+
+	it("starts a web app with HTTPD", func() {
+		c.isWebApp = true
+		c.webserver = ApacheHttpd
 
 		Expect(c.Contribute()).To(Succeed())
 
-		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "htdocs")
+		phpLayer := f.Build.Layers.Layer(WebDependency)
+
+		command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
+			phpLayer.Root,
+			filepath.Join(phpLayer.Root, "etc", "php-fpm.conf"),
+			filepath.Join(phpLayer.Root, "etc"))
 		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", command},
-				{"task", command},
 			},
 		}))
 	})
 
-	it("contributes a php.ini file", func() {
+	it("starts a web app and defaults to Apache Web Server", func() {
 		c.isWebApp = true
-		c.webserver = PhpWebServer
 
-		layer := f.Build.Layers.Layer(php.Dependency)
 		Expect(c.Contribute()).To(Succeed())
-		Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+
+		phpLayer := f.Build.Layers.Layer(WebDependency)
+
+		command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
+			phpLayer.Root,
+			filepath.Join(phpLayer.Root, "etc", "php-fpm.conf"),
+			filepath.Join(phpLayer.Root, "etc"))
+		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{"web", command},
+			},
+		}))
 	})
 
 	it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
 		c.isWebApp = true
 		c.webserver = ApacheHttpd
 
-		layer := f.Build.Layers.Layer(php.Dependency)
+		layer := f.Build.Layers.Layer(WebDependency)
 		Expect(c.Contribute()).To(Succeed())
 		Expect(filepath.Join(f.Build.Application.Root, "httpd.conf")).To(BeARegularFile())
 		Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
 	})
 
-	it("starts a web app with HTTPD", func() {
-		// TODO
+	it("contributes php-fpm.conf & includes a user's config", func() {
+		helper.WriteFile(filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), 0644, "")
+
+		layer := f.Build.Layers.Layer(WebDependency)
+		err := c.writePhpFpmConf(layer)
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
+
+		result, err := ioutil.ReadFile(filepath.Join(layer.Root, "etc", "php-fpm.conf"))
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(result)).To(ContainSubstring(fmt.Sprintf(`include=%s`, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "*.conf"))))
 	})
 
 	it("starts a web app with Nginx", func() {

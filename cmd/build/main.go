@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/php-app-cnb/phpapp"
+	"github.com/cloudfoundry/php-web-cnb/phpweb"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/build"
@@ -44,13 +44,13 @@ func main() {
 func runBuild(context build.Build) (int, error) {
 	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
 
-	phpapp, willContribute, err := phpapp.NewContributor(context)
+	phpweb, willContribute, err := phpweb.NewContributor(context)
 	if err != nil {
 		return context.Failure(102), err
 	}
 
 	if willContribute {
-		err := phpapp.Contribute()
+		err := phpweb.Contribute()
 		if err != nil {
 			return context.Failure(103), err
 		}

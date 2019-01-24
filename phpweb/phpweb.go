@@ -1,4 +1,4 @@
-package phpapp
+package phpweb
 
 const (
 	// WebDependency in the buildplan indiates that this is a web app
