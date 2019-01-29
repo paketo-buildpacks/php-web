@@ -145,7 +145,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("push simple app", func() {
-		it.Focus("servers simple php page", func() {
+		it("servers simple php page", func() {
 			app, err := dagger.Pack(filepath.Join("fixtures", "simple_app"), builderMetadataWithHttpd, dagger.CFLINUXFS3)
 			Expect(err).ToNot(HaveOccurred())
 
