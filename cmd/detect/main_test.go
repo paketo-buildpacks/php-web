@@ -17,11 +17,12 @@
 package main
 
 import (
+	"path/filepath"
+	"testing"
+
 	"github.com/cloudfoundry/httpd-cnb/httpd"
 	"github.com/cloudfoundry/php-cnb/php"
 	"github.com/cloudfoundry/php-web-cnb/phpweb"
-	"path/filepath"
-	"testing"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
@@ -85,16 +86,20 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					Version: fakeVersion,
 				},
 				"php-web": buildplan.Dependency{},
-				"httpd": buildplan.Dependency{},
+				"httpd": buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						"launch": true,
+					},
+				},
 			}))
 		})
 
-		it("defaults php.webserver to apache webserver", func(){
+		it("defaults php.webserver to apache webserver", func() {
 			Expect(pickWebServer(phpweb.BuildpackYAML{})).To(Equal(httpd.Dependency))
 		})
 
-		it("will read php.webserver and select nginx", func(){
-			Expect(pickWebServer(phpweb.BuildpackYAML{Config:phpweb.Config{WebServer: "nginx",}})).
+		it("will read php.webserver and select nginx", func() {
+			Expect(pickWebServer(phpweb.BuildpackYAML{Config: phpweb.Config{WebServer: "nginx"}})).
 				To(Equal("nginx"))
 		})
 
@@ -114,7 +119,11 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					Version: fakeVersion,
 				},
 				"php-web": buildplan.Dependency{},
-				"nginx": buildplan.Dependency{},
+				"nginx": buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						"launch": true,
+					},
+				},
 			}))
 		})
 

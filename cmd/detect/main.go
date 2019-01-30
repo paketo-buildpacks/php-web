@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/httpd-cnb/httpd"
-	"github.com/cloudfoundry/php-cnb/php"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry/httpd-cnb/httpd"
+	"github.com/cloudfoundry/php-cnb/php"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
@@ -103,19 +104,19 @@ func runDetect(context detect.Detect) (int, error) {
 		return context.Fail(), err
 	}
 
-	webDir := pickWebDir(buildpackYAML)
-
-	webAppFound, err := searchForWebApp(context.Application.Root, webDir)
-	if err != nil {
-		return context.Fail(), err
-	}
-
 	plan, phpFound := context.BuildPlan[php.Dependency]
 	if !phpFound {
 		context.Logger.SubsequentLine("PHP not listed in build plan, and is required")
 		return context.Fail(), nil
 	}
 	version := phpweb.Version(buildpackYAML, context.Buildpack, plan)
+
+	webDir := pickWebDir(buildpackYAML)
+
+	webAppFound, err := searchForWebApp(context.Application.Root, webDir)
+	if err != nil {
+		return context.Fail(), err
+	}
 
 	if webAppFound {
 		return context.Pass(buildplan.BuildPlan{
@@ -126,7 +127,11 @@ func runDetect(context detect.Detect) (int, error) {
 				Version: version,
 			},
 			phpweb.WebDependency: buildplan.Dependency{},
-			pickWebServer(buildpackYAML): buildplan.Dependency{},
+			pickWebServer(buildpackYAML): buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					"launch": true,
+				},
+			},
 		})
 	}
 
