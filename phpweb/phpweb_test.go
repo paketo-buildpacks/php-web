@@ -66,13 +66,12 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal("test-version"))
 		})
 
-		it("return empty string if none set", func() {
+		it("return `*` if none set", func() {
 			buildpack := buildpack.NewBuildpack(bp.Buildpack{}, logger.Logger{})
 			dependency := buildplan.Dependency{}
 
-			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal(""))
+			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal("*"))
 		})
-
 
 	})
 
