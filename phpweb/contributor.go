@@ -242,9 +242,7 @@ func (c Contributor) Contribute() error {
 
 		l := c.layers.Layer(WebDependency)
 		l.Touch()
-		if err := l.Contribute(c, c.contributeWebApp, c.flags()...); err != nil {
-			return err
-		}
+		return l.Contribute(c, c.contributeWebApp, c.flags()...)
 	}
 
 	if c.isScript {
@@ -252,9 +250,7 @@ func (c Contributor) Contribute() error {
 
 		l := c.layers.Layer(ScriptDependency)
 		l.Touch()
-		if err := l.Contribute(c, c.contributeScript, c.flags()...); err != nil {
-			return err
-		}
+		return l.Contribute(c, c.contributeScript, c.flags()...)
 	}
 
 	c.logger.Info("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")
