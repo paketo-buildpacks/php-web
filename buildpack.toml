@@ -1,7 +1,7 @@
 
 [buildpack]
-id = "org.cloudfoundry.buildpacks.php-apps"
-name = "PHP Apps Buildpack"
+id = "org.cloudfoundry.buildpacks.php-web"
+name = "PHP Web Buildpack"
 version = "0.0.1"
 
 [metadata]

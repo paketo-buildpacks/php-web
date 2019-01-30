@@ -115,7 +115,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 					URI: phpBpURI,
 				},
 				{
-					ID:  "org.cloudfoundry.buildpacks.php-apps",
+					ID:  "org.cloudfoundry.buildpacks.php-web",
 					URI: uri,
 				},
 				{
@@ -131,11 +131,11 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 							Version: "0.0.1",
 						},
 						{
-							ID:      "org.cloudfoundry.buildpacks.php-apps",
+							ID:      "org.cloudfoundry.buildpacks.httpd",
 							Version: "0.0.1",
 						},
 						{
-							ID:      "org.cloudfoundry.buildpacks.httpd",
+							ID:      "org.cloudfoundry.buildpacks.php-web",
 							Version: "0.0.1",
 						},
 					},
