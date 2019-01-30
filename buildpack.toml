@@ -4,6 +4,9 @@ id = "org.cloudfoundry.buildpacks.php-apps"
 name = "PHP Apps Buildpack"
 version = "0.0.1"
 
+[metadata]
+default_version = "7.2.*"
+
 [[stacks]]
 id = "org.cloudfoundry.stacks.cflinuxfs3"
 
