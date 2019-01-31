@@ -21,7 +21,7 @@ const HttpdConfTemplate = `ServerRoot "${SERVER_ROOT}"
 Listen ${PORT}
 ServerAdmin "{{.ServerAdmin}}"
 ServerName "0.0.0.0"
-DocumentRoot "${HOME}/{{.WebDirectory}}"
+DocumentRoot "${APP_ROOT}/{{.WebDirectory}}"
 
 # Load only modules required for PHP
 LoadModule authz_core_module modules/mod_authz_core.so
@@ -48,7 +48,7 @@ LoadModule headers_module modules/mod_headers.so
     Require all denied
 </Directory>
 
-<Directory "${HOME}/{{.WebDirectory}}">
+<Directory "${APP_ROOT}/{{.WebDirectory}}">
     Options SymLinksIfOwnerMatch
     AllowOverride All
     Require all granted
@@ -124,7 +124,7 @@ SetEnvIf x-forwarded-proto https HTTPS=on
 # Talk to PHP via FCGI & php-fpm
 DirectoryIndex index.php index.html index.htm
 
-Define fcgi-listener fcgi://{{.FpmSocket}}${HOME}/{{.WebDirectory}}
+Define fcgi-listener fcgi://{{.FpmSocket}}${APP_ROOT}/{{.WebDirectory}}
 
 <Proxy "${fcgi-listener}">
     # Noop ProxySet directive, disablereuse=On is the default value.
@@ -135,10 +135,10 @@ Define fcgi-listener fcgi://{{.FpmSocket}}${HOME}/{{.WebDirectory}}
     ProxySet disablereuse=On retry=0
 </Proxy>
 
-<Directory "${HOME}/{{.WebDirectory}}">
+<Directory "${APP_ROOT}/{{.WebDirectory}}">
   <Files *.php>
       <If "-f %{REQUEST_FILENAME}"> # make sure the file exists so that if not, Apache will show its 404 page and not FPM
-          SetHandler proxy:${fcgi-listener}
+          SetHandler proxy:fcgi://{{.FpmSocket}}
       </If>
   </Files>
 </Directory>

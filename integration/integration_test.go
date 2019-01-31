@@ -88,7 +88,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 					URI: phpBpURI,
 				},
 				{
-					ID:  "org.cloudfoundry.buildpacks.php-apps",
+					ID:  "org.cloudfoundry.buildpacks.php-web",
 					URI: uri,
 				},
 			},
@@ -100,7 +100,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 							Version: "0.0.1",
 						},
 						{
-							ID:      "org.cloudfoundry.buildpacks.php-apps",
+							ID:      "org.cloudfoundry.buildpacks.php-web",
 							Version: "0.0.1",
 						},
 					},
@@ -150,6 +150,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("", "3s", "1s")
+			app.Env["PORT"] = "8080"
 
 			err = app.Start()
 			if err != nil {
@@ -172,11 +173,11 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("servers simple php page hosted with built-in PHP server", func() {
-			// TODO: create buildpack.yml and set php.webserver
-			app, err := dagger.Pack(filepath.Join("fixtures", "simple_app"), builderMetadata, dagger.CFLINUXFS3)
+			app, err := dagger.Pack(filepath.Join("fixtures", "simple_app_php_only"), builderMetadata, dagger.CFLINUXFS3)
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("", "3s", "1s")
+			app.Env["PORT"] = "8080"
 
 			err = app.Start()
 			if err != nil {
@@ -203,6 +204,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("true", "3s", "1s") // disables health check
+			app.Env["PORT"] = "8080"
 			// TODO add DisableHealthCheck to dagger
 
 			err = app.Start()

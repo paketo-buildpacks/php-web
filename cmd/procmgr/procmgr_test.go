@@ -17,10 +17,7 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
+	"github.com/cloudfoundry/php-web-cnb/procmgr"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -32,58 +29,17 @@ func TestUnitProcmgr(t *testing.T) {
 	spec.Run(t, "Procmgr", testProcmgr, spec.Report(report.Terminal{}))
 }
 
-func testProcmgr(t *testing.T, when spec.G, it spec.S) {
-	var tmp string
-
+func testProcmgr(t *testing.T, _ spec.G, it spec.S) {
 	it.Before(func() {
 		RegisterTestingT(t)
-
-		var err error
-		tmp, err = ioutil.TempDir("", "procmgr")
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	it("should load some procs", func() {
-		procs := `{"processes": {"echo1": {"command": "echo", "args": "'Hello World!'"}, "echo2": {"command": "echo", "args": "'Good-bye World!'"}}}`
-		procsFile := filepath.Join(tmp, "procs.yml")
-		err := writeYaml(procsFile, procs)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(procsFile).To(BeARegularFile())
-
-		list, err := readProcs(procsFile)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(len(list.Processes)).To(Equal(2))
-		Expect(list.Processes["echo1"]).To(Equal(Proc{"echo", "'Hello World!'"}))
-	})
-
-	it("should fail on bad yaml", func() {
-		procs := `Not actuall YAML`
-		procsFile := filepath.Join(tmp, "procs.yml")
-		err := writeYaml(procsFile, procs)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(procsFile).To(BeARegularFile())
-
-		_, err = readProcs(procsFile)
-		Expect(err).To(HaveOccurred())
-	})
-
-	it("should if file does not exist", func() {
-		procsFile := filepath.Join(tmp, "procs.yml")
-
-		Expect(procsFile).ToNot(BeARegularFile())
-
-		_, err := readProcs(procsFile)
-		Expect(err).To(HaveOccurred())
 	})
 
 	it("should run a proc", func() {
-		err := runProcs(Procs{
-			Processes: map[string]Proc{
-				"proc1": Proc{
+		err := runProcs(procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"proc1": {
 					Command: "echo",
-					Args:    "'Hello World!",
+					Args:    []string{"'Hello World!"},
 				},
 			},
 		})
@@ -91,15 +47,15 @@ func testProcmgr(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("should run two procs", func() {
-		err := runProcs(Procs{
-			Processes: map[string]Proc{
-				"proc1": Proc{
+		err := runProcs(procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"proc1": {
 					Command: "echo",
-					Args:    "'Hello World!",
+					Args:    []string{"'Hello World!"},
 				},
-				"proc2": Proc{
+				"proc2": {
 					Command: "echo",
-					Args:    "'Good-bye World!",
+					Args:    []string{"'Good-bye World!"},
 				},
 			},
 		})
@@ -107,11 +63,11 @@ func testProcmgr(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("should fail if proc exits non-zero", func() {
-		err := runProcs(Procs{
-			Processes: map[string]Proc{
-				"proc1": Proc{
+		err := runProcs(procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"proc1": {
 					Command: "false",
-					Args:    "",
+					Args:    []string{""},
 				},
 			},
 		})
@@ -119,30 +75,18 @@ func testProcmgr(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("should run two procs, where one is shorter", func() {
-		err := runProcs(Procs{
-			Processes: map[string]Proc{
-				"sleep0.25": Proc{
+		err := runProcs(procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"sleep0.25": {
 					Command: "sleep",
-					Args:    "0.25",
+					Args:    []string{"0.25"},
 				},
-				"sleep1": Proc{
+				"sleep1": {
 					Command: "sleep",
-					Args:    "1",
+					Args:    []string{"1"},
 				},
 			},
 		})
 		Expect(err).ToNot(HaveOccurred())
 	})
-}
-
-func writeYaml(path string, format string, args ...interface{}) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(path, []byte(fmt.Sprintf(format, args...)), 0644); err != nil {
-		return err
-	}
-
-	return nil
 }

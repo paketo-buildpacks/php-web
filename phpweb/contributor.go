@@ -18,6 +18,7 @@ package phpweb
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/php-web-cnb/procmgr"
 	"path/filepath"
 	"strings"
 
@@ -163,7 +164,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 	if strings.ToLower(c.webserver) == PhpWebServer {
 		c.logger.SubsequentLine("Using PHP built-in server")
 		webdir := filepath.Join(c.application.Root, c.webdir)
-		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s", webdir)
+		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s", webdir)
 
 		return c.layers.WriteMetadata(layers.Metadata{
 			Processes: []layers.Process{
@@ -189,23 +190,24 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		}
 
 		procsYaml := filepath.Join(layer.Root, "procs.yml")
-		//TODO: need to write out `procs.yml`
-		//  - move Procs structs to a reusable library
-		//  - use procs, then marshal to disk
-		//  - do this all in another method & test
-
-		command := fmt.Sprintf("procmgr %s", procsYaml)
-
-		// command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
-		// 	layer.Root,
-		// 	filepath.Join(layer.Root, "etc", "php-fpm.conf"),
-		// 	filepath.Join(layer.Root, "etc"))
-
-		return c.layers.WriteMetadata(layers.Metadata{
-			Processes: []layers.Process{
-				{"web", command},
+		procs := procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"httpd": {
+					Command: "httpd",
+					Args:    []string{"-f", filepath.Join(c.application.Root, "httpd.conf"), "-k", "start", "-DFOREGROUND"},
+				},
+				"php-fpm": {
+					Command: "php-fpm",
+					Args:    []string{"-p", layer.Root, "-y", filepath.Join(layer.Root, "etc", "php-fpm.conf"), "-c", filepath.Join(layer.Root, "etc")},
+				},
 			},
-		})
+		}
+
+		if err := procmgr.WriteProcs(procsYaml, procs); err != nil {
+			return fmt.Errorf("failed to write procs.yml: %s", err)
+		}
+
+		return c.layers.WriteMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml)}}})
 	}
 
 	if strings.ToLower(c.webserver) == Nginx {

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -44,10 +45,13 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it.Before(func() {
 		RegisterTestingT(t)
-		var err error
 		f = test.NewBuildFactory(t)
+
+		var err error
 		c, _, err = NewContributor(f.Build)
 		Expect(err).To(Not(HaveOccurred()))
+
+		Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "procmgr"), os.ModePerm, "")).To(Succeed())
 	})
 
 	it("starts a web app with `php -S`", func() {
@@ -56,7 +60,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 		Expect(c.Contribute()).To(Succeed())
 
-		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "htdocs")
+		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "htdocs")
 		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", command},
@@ -72,7 +76,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 		Expect(c.Contribute()).To(Succeed())
 
-		command := fmt.Sprintf("php -S 0.0.0.0:8080 -t %s/%s", f.Build.Application.Root, "public")
+		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "public")
 		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", command},
@@ -109,16 +113,37 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		phpLayer := f.Build.Layers.Layer(WebDependency)
+		procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
-		command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
-			phpLayer.Root,
-			filepath.Join(phpLayer.Root, "etc", "php-fpm.conf"),
-			filepath.Join(phpLayer.Root, "etc"))
 		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
+				{"web", fmt.Sprintf("procmgr %s", procFile)},
 			},
 		}))
+
+		Expect(procFile).To(BeARegularFile())
+
+		file, err := os.Open(procFile)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		buf, err := ioutil.ReadAll(file)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(buf)).To(ContainSubstring("command: php-fpm"))
+		Expect(string(buf)).To(ContainSubstring("-p"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web"))
+		Expect(string(buf)).To(ContainSubstring("-y"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web/etc/php-fpm.conf"))
+		Expect(string(buf)).To(ContainSubstring("-c"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web/etc"))
+
+		Expect(string(buf)).To(ContainSubstring("command: httpd"))
+		Expect(string(buf)).To(ContainSubstring("-f"))
+		Expect(string(buf)).To(ContainSubstring("application"))
+		Expect(string(buf)).To(ContainSubstring("-k"))
+		Expect(string(buf)).To(ContainSubstring("start"))
+		Expect(string(buf)).To(ContainSubstring("-DFOREGROUND"))
 	})
 
 	it("starts a web app and defaults to Apache Web Server", func() {
@@ -127,16 +152,37 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		phpLayer := f.Build.Layers.Layer(WebDependency)
+		procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
-		command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
-			phpLayer.Root,
-			filepath.Join(phpLayer.Root, "etc", "php-fpm.conf"),
-			filepath.Join(phpLayer.Root, "etc"))
 		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
+				{"web", fmt.Sprintf("procmgr %s", procFile)},
 			},
 		}))
+
+		Expect(procFile).To(BeARegularFile())
+
+		file, err := os.Open(procFile)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		buf, err := ioutil.ReadAll(file)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(buf)).To(ContainSubstring("command: php-fpm"))
+		Expect(string(buf)).To(ContainSubstring("-p"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web"))
+		Expect(string(buf)).To(ContainSubstring("-y"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web/etc/php-fpm.conf"))
+		Expect(string(buf)).To(ContainSubstring("-c"))
+		Expect(string(buf)).To(ContainSubstring("layers/php-web/etc"))
+
+		Expect(string(buf)).To(ContainSubstring("command: httpd"))
+		Expect(string(buf)).To(ContainSubstring("-f"))
+		Expect(string(buf)).To(ContainSubstring("application"))
+		Expect(string(buf)).To(ContainSubstring("-k"))
+		Expect(string(buf)).To(ContainSubstring("start"))
+		Expect(string(buf)).To(ContainSubstring("-DFOREGROUND"))
 	})
 
 	it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {

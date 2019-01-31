@@ -18,11 +18,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/cloudfoundry/php-web-cnb/procmgr"
 )
 
 func main() {
@@ -34,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	procs, err := readProcs(os.Args[1])
+	procs, err := procmgr.ReadProcs(os.Args[1])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading/parsing procs file:", err)
 		os.Exit(2)
@@ -43,46 +42,13 @@ func main() {
 	runProcs(procs)
 }
 
-// Procs is the list of process names and commands to run
-type Procs struct {
-	Processes map[string]Proc
-}
-
-// Proc is a single process to run
-type Proc struct {
-	Command string
-	Args    string
-}
-
-func readProcs(path string) (Procs, error) {
-	procs := Procs{}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return Procs{}, err
-	}
-	defer file.Close()
-
-	contents, err := ioutil.ReadAll(file)
-	if err != nil {
-		return Procs{}, err
-	}
-
-	err = yaml.UnmarshalStrict(contents, &procs)
-	if err != nil {
-		return Procs{}, err
-	}
-
-	return procs, nil
-}
-
 type procMsg struct {
 	ProcName string
 	Cmd      *exec.Cmd
 	Err      error
 }
 
-func runProcs(procs Procs) error {
+func runProcs(procs procmgr.Procs) error {
 	msgs := make(chan procMsg)
 
 	for procName, proc := range procs.Processes {
@@ -96,8 +62,8 @@ func runProcs(procs Procs) error {
 	}
 }
 
-func runProc(procName string, proc Proc, msgs chan procMsg) {
-	cmd := exec.Command(proc.Command, proc.Args)
+func runProc(procName string, proc procmgr.Proc, msgs chan procMsg) {
+	cmd := exec.Command(proc.Command, proc.Args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
