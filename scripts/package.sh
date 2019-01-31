@@ -20,7 +20,7 @@ if [ "${BP_REWRITE_HOST:-}" != "" ]; then
 fi
 
 # TODO: Update list of built binaries as they are written
-for b in detect build; do
+for b in detect build procmgr; do
     echo -n "Building $b..."
     GOOS=$TARGET_OS go build -o $bp_dir/bin/$b ./cmd/$b
     echo "done"

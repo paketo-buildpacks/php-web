@@ -44,6 +44,7 @@ type Contributor struct {
 	webserver     string
 	webdir        string
 	script        string
+	procmgr       string
 }
 
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
@@ -68,6 +69,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		webserver:     buildpackYAML.Config.WebServer,
 		webdir:        buildpackYAML.Config.WebDirectory,
 		script:        buildpackYAML.Config.Script,
+		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
 	}
 
 	return contributor, true, nil
@@ -174,17 +176,30 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 	if strings.ToLower(c.webserver) == ApacheHttpd {
 		c.logger.SubsequentLine("Using Apache Web Server")
 
+		if err := c.installProcmgr(layer); err != nil {
+			return err
+		}
+
 		if err := c.writeHttpdConf(layer); err != nil {
 			return err
 		}
+
 		if err := c.writePhpFpmConf(layer); err != nil {
 			return err
 		}
 
-		command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
-			layer.Root,
-			filepath.Join(layer.Root, "etc", "php-fpm.conf"),
-			filepath.Join(layer.Root, "etc"))
+		procsYaml := filepath.Join(layer.Root, "procs.yml")
+		//TODO: need to write out `procs.yml`
+		//  - move Procs structs to a reusable library
+		//  - use procs, then marshal to disk
+		//  - do this all in another method & test
+
+		command := fmt.Sprintf("procmgr %s", procsYaml)
+
+		// command := fmt.Sprintf(`php-fpm -p "%s" -y "%s" -c "%s"`,
+		// 	layer.Root,
+		// 	filepath.Join(layer.Root, "etc", "php-fpm.conf"),
+		// 	filepath.Join(layer.Root, "etc"))
 
 		return c.layers.WriteMetadata(layers.Metadata{
 			Processes: []layers.Process{
@@ -228,6 +243,11 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 			{"task", command},
 		},
 	})
+}
+
+// InstallProcmgr adds the procmgr binary to the path
+func (c Contributor) installProcmgr(layer layers.Layer) error {
+	return helper.CopyFile(c.procmgr, filepath.Join(layer.Root, "bin", "procmgr"))
 }
 
 // Identity make Contributor satisfy the Identifiable interface.
