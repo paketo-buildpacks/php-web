@@ -19,9 +19,7 @@ package integration
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/buildpack/libbuildpack/buildpack"
@@ -38,34 +36,6 @@ func TestIntegration(t *testing.T) {
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
-// TODO: replace with dagger.GetRemoteBuildpack when there's a remote release available
-func packagePHPBuildpack() (string, error) {
-	// assumes the php-cnb is one level up
-	cmd := exec.Command("../../php-cnb/scripts/package.sh")
-	cmd.Stderr = os.Stderr
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	r := regexp.MustCompile("Buildpack packaged into: (.*)")
-	bpDir := r.FindStringSubmatch(string(out))[1]
-	return bpDir, nil
-}
-
-// TODO: replace with dagger.GetRemoteBuildpack when there's a remote release available
-func packageHttpdBuildpack() (string, error) {
-	// assumes the httpd-cnb is one level up
-	cmd := exec.Command("../../httpd-cnb/scripts/package.sh")
-	cmd.Stderr = os.Stderr
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	r := regexp.MustCompile("Buildpack packaged into: (.*)")
-	bpDir := r.FindStringSubmatch(string(out))[1]
-	return bpDir, nil
-}
-
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	var builderMetadata dagger.BuilderMetadata
 	var builderMetadataWithHttpd dagger.BuilderMetadata
@@ -75,10 +45,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		uri, err := dagger.PackageBuildpack()
 		Expect(err).ToNot(HaveOccurred())
 
-		phpBpURI, err := packagePHPBuildpack()
+		phpBpURI, err := dagger.GetRemoteBuildpack("https://github.com/cloudfoundry/php-cnb/releases/download/v0.0.1/php-cnb-0.0.1.tgz")
 		Expect(err).ToNot(HaveOccurred())
 
-		httpdBpURI, err := packageHttpdBuildpack()
+		httpdBpURI, err := dagger.GetRemoteBuildpack("https://github.com/cloudfoundry/httpd-cnb/releases/download/v0.0.1/httpd-cnb-0.0.1.tgz")
 		Expect(err).ToNot(HaveOccurred())
 
 		builderMetadata = dagger.BuilderMetadata{
