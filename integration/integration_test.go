@@ -18,13 +18,10 @@ package integration
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/dagger"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/buildpack/libbuildpack/buildpack"
-
-	"github.com/cloudfoundry/dagger"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -37,86 +34,27 @@ func TestIntegration(t *testing.T) {
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
-	var builderMetadata dagger.BuilderMetadata
-	var builderMetadataWithHttpd dagger.BuilderMetadata
+	var (
+		uri, phpBpURI, httpdBpURI string
+	)
 
 	it.Before(func() {
+		var err error
+
 		RegisterTestingT(t)
-		uri, err := dagger.PackageBuildpack()
+		uri, err = dagger.PackageBuildpack()
 		Expect(err).ToNot(HaveOccurred())
 
-		phpBpURI, err := dagger.GetRemoteBuildpack("https://github.com/cloudfoundry/php-cnb/releases/download/v0.0.1/php-cnb-0.0.1.tgz")
+		phpBpURI, err = dagger.GetLatestBuildpack("php-cnb")
 		Expect(err).ToNot(HaveOccurred())
 
-		httpdBpURI, err := dagger.GetRemoteBuildpack("https://github.com/cloudfoundry/httpd-cnb/releases/download/v0.0.1/httpd-cnb-0.0.1.tgz")
+		httpdBpURI, err = dagger.GetLatestBuildpack("httpd-cnb")
 		Expect(err).ToNot(HaveOccurred())
-
-		builderMetadata = dagger.BuilderMetadata{
-			Buildpacks: []dagger.Buildpack{
-				{
-					ID:  "org.cloudfoundry.buildpacks.php",
-					URI: phpBpURI,
-				},
-				{
-					ID:  "org.cloudfoundry.buildpacks.php-web",
-					URI: uri,
-				},
-			},
-			Groups: []dagger.Group{
-				{
-					[]buildpack.Info{
-						{
-							ID:      "org.cloudfoundry.buildpacks.php",
-							Version: "0.0.1",
-						},
-						{
-							ID:      "org.cloudfoundry.buildpacks.php-web",
-							Version: "0.0.1",
-						},
-					},
-				},
-			},
-		}
-
-		builderMetadataWithHttpd = dagger.BuilderMetadata{
-			Buildpacks: []dagger.Buildpack{
-				{
-					ID:  "org.cloudfoundry.buildpacks.php",
-					URI: phpBpURI,
-				},
-				{
-					ID:  "org.cloudfoundry.buildpacks.php-web",
-					URI: uri,
-				},
-				{
-					ID:  "org.cloudfoundry.buildpacks.httpd",
-					URI: httpdBpURI,
-				},
-			},
-			Groups: []dagger.Group{
-				{
-					[]buildpack.Info{
-						{
-							ID:      "org.cloudfoundry.buildpacks.php",
-							Version: "0.0.1",
-						},
-						{
-							ID:      "org.cloudfoundry.buildpacks.httpd",
-							Version: "0.0.1",
-						},
-						{
-							ID:      "org.cloudfoundry.buildpacks.php-web",
-							Version: "0.0.1",
-						},
-					},
-				},
-			},
-		}
 	})
 
 	when("push simple app", func() {
 		it("servers simple php page", func() {
-			app, err := dagger.Pack(filepath.Join("fixtures", "simple_app"), builderMetadataWithHttpd, dagger.CFLINUXFS3)
+			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_app"), phpBpURI, httpdBpURI, uri)
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("", "3s", "1s")
@@ -125,25 +63,25 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			err = app.Start()
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
-				containerID, imageName, volumeIDs, err := app.ContainerInfo()
+				containerID, imageName, volumeIDs, err := app.Info()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
 
-				containerLogs, err := app.ContainerLogs()
+				containerLogs, err := app.Logs()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("Container Logs:\n %s\n", containerLogs)
 				t.FailNow()
 			}
 
-			resp, err := app.HTTPGetSucceeds("/index.php?date")
+			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(string(resp)).To(ContainSubstring("SUCCESS"))
+			Expect(resp).To(ContainSubstring("SUCCESS"))
 
-			Expect(app.Destroy()).To(Succeed()) //Only destroy app if the test passed to leave artifacts to debug
+			Expect(app.Destroy()).To(Succeed())
 		})
 
 		it("servers simple php page hosted with built-in PHP server", func() {
-			app, err := dagger.Pack(filepath.Join("fixtures", "simple_app_php_only"), builderMetadata, dagger.CFLINUXFS3)
+			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_app_php_only"), phpBpURI, uri)
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("", "3s", "1s")
@@ -152,25 +90,25 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			err = app.Start()
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
-				containerID, imageName, volumeIDs, err := app.ContainerInfo()
+				containerID, imageName, volumeIDs, err := app.Info()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
 
-				containerLogs, err := app.ContainerLogs()
+				containerLogs, err := app.Logs()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("Container Logs:\n %s\n", containerLogs)
 				t.FailNow()
 			}
 
-			resp, err := app.HTTPGetSucceeds("/index.php?date")
+			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(string(resp)).To(ContainSubstring("SUCCESS"))
+			Expect(resp).To(ContainSubstring("SUCCESS"))
 
-			Expect(app.Destroy()).To(Succeed()) //Only destroy app if the test passed to leave artifacts to debug
+			Expect(app.Destroy()).To(Succeed())
 		})
 
 		it("runs a cli app", func() {
-			app, err := dagger.Pack(filepath.Join("fixtures", "simple_cli_app"), builderMetadata, dagger.CFLINUXFS3)
+			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_cli_app"), phpBpURI, uri)
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("true", "3s", "1s") // disables health check
@@ -180,21 +118,21 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			err = app.Start()
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
-				containerID, imageName, volumeIDs, err := app.ContainerInfo()
+				containerID, imageName, volumeIDs, err := app.Info()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
 
-				containerLogs, err := app.ContainerLogs()
+				containerLogs, err := app.Logs()
 				Expect(err).NotTo(HaveOccurred())
 				fmt.Printf("Container Logs:\n %s\n", containerLogs)
 				t.FailNow()
 			}
 
-			logs, err := app.ContainerLogs()
+			logs, err := app.Logs()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logs).To(ContainSubstring("SUCCESS"))
 
-			Expect(app.Destroy()).To(Succeed()) //Only destroy app if the test passed to leave artifacts to debug
+			Expect(app.Destroy()).To(Succeed())
 		})
 	})
 }
