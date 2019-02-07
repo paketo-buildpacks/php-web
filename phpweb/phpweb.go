@@ -1,6 +1,7 @@
 package phpweb
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,7 +10,7 @@ import (
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -102,4 +103,20 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 		}
 	}
 	return buildpackYAML, nil
+}
+
+// LoadAvailablePHPExtensions locates available extensions and returns the list
+func LoadAvailablePHPExtensions(phpLayerRoot string, version string) ([]string, error) {
+	extensionFolder := fmt.Sprintf("no-debug-non-zts-%s", API(version))
+	extensionPath := filepath.Join(phpLayerRoot, "lib","php", "extensions", extensionFolder, "*.so")
+	extensions, err := filepath.Glob(extensionPath)
+	if err !=nil {
+		return []string{}, err
+	}
+
+	for i:=0; i < len(extensions); i++ {
+		extensions[i]= strings.Trim(filepath.Base(extensions[i]),".so")
+	}
+
+	return extensions, nil
 }

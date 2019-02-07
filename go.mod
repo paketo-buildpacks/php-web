@@ -6,7 +6,6 @@ require (
 	github.com/cloudfoundry/httpd-cnb v0.0.1
 	github.com/cloudfoundry/libcfbuildpack v1.39.0
 	github.com/cloudfoundry/php-cnb v0.0.1
-	github.com/kr/pty v1.1.3 // indirect
 	github.com/mattn/go-colorable v0.1.0 // indirect
 	github.com/onsi/gomega v1.4.3
 	github.com/sclevine/spec v1.2.0

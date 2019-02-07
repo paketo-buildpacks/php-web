@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/php-cnb/php"
+
 	bp "github.com/buildpack/libbuildpack/buildpack"
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
@@ -118,6 +120,25 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			Expect("20170718").To(Equal(API("7.2")))
 			Expect("20180731").To(Equal(API("7.3.1")))
 			Expect("20180731").To(Equal(API("7.3")))
+		})
+	})
+
+	when("we need a list of PHP extensions", func() {
+		var f *test.BuildFactory
+
+		it.Before(func() {
+			f = test.NewBuildFactory(t)
+		})
+
+		it("loads the available extensions", func() {
+			layer := f.Build.Layers.Layer(php.Dependency)
+			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "dba.so"), "")
+			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "curl.so"), "")
+			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "mysqli.so"), "")
+
+			extensions, err := LoadAvailablePHPExtensions(layer.Root, "7.2")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(extensions)).To(Equal(3))
 		})
 	})
 }

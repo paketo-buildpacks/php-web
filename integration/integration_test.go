@@ -18,9 +18,7 @@ package integration
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/dagger"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/sclevine/spec"
@@ -34,33 +32,20 @@ func TestIntegration(t *testing.T) {
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
-	var (
-		uri, phpBpURI, httpdBpURI string
-	)
-
 	it.Before(func() {
-		var err error
 
 		RegisterTestingT(t)
-		uri, err = dagger.PackageBuildpack()
-		Expect(err).ToNot(HaveOccurred())
 
-		phpBpURI, err = dagger.GetLatestBuildpack("php-cnb")
-		Expect(err).ToNot(HaveOccurred())
-
-		httpdBpURI, err = dagger.GetLatestBuildpack("httpd-cnb")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	when("push simple app", func() {
 		it("servers simple php page", func() {
-			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_app"), phpBpURI, httpdBpURI, uri)
+
+			app, err := PreparePhpApp("simple_app")
 			Expect(err).ToNot(HaveOccurred())
 
-			app.SetHealthCheck("", "3s", "1s")
-			app.Env["PORT"] = "8080"
-
 			err = app.Start()
+
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
 				containerID, imageName, volumeIDs, err := app.Info()
@@ -81,11 +66,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("servers simple php page hosted with built-in PHP server", func() {
-			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_app_php_only"), phpBpURI, uri)
-			Expect(err).ToNot(HaveOccurred())
 
-			app.SetHealthCheck("", "3s", "1s")
-			app.Env["PORT"] = "8080"
+			app, err := PreparePhpApp("simple_app_php_only")
+			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
 			if err != nil {
@@ -108,14 +91,13 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("runs a cli app", func() {
-			app, err := dagger.PackBuild(filepath.Join("fixtures", "simple_cli_app"), phpBpURI, uri)
+			app, err := PreparePhpApp("simple_cli_app")
 			Expect(err).ToNot(HaveOccurred())
 
-			app.SetHealthCheck("true", "3s", "1s") // disables health check
-			app.Env["PORT"] = "8080"
-			// TODO add DisableHealthCheck to dagger
+			app.SetHealthCheck("true", "3s", "1s")
 
 			err = app.Start()
+
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
 				containerID, imageName, volumeIDs, err := app.Info()
