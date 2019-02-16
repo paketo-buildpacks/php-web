@@ -18,9 +18,10 @@ package phpweb
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
 	"github.com/cloudfoundry/php-web-cnb/config"
 
@@ -46,6 +47,7 @@ type Contributor struct {
 	webdir        string
 	script        string
 	procmgr       string
+	metadata      Metadata
 }
 
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
@@ -59,6 +61,16 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 	_, isScript := context.BuildPlan[ScriptDependency]
 	phpDep, _ := context.BuildPlan[php.Dependency]
 
+	metadata := NewMetadata(context.Buildpack.Info.Version)
+	metadata.UpdateHashFromFile(filepath.Join(context.Application.Root, "buildpack.yml"))
+
+	userIncludePath, err := GetPhpFpmConfPath(context.Application.Root)
+	if err != nil || userIncludePath == "" {
+		metadata.PhpFpmUserConfig = false
+	} else {
+		metadata.PhpFpmUserConfig = true
+	}
+
 	contributor := Contributor{
 		application:   context.Application,
 		layers:        context.Layers,
@@ -71,6 +83,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		webdir:        buildpackYAML.Config.WebDirectory,
 		script:        buildpackYAML.Config.Script,
 		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
+		metadata:      metadata,
 	}
 
 	return contributor, true, nil
@@ -108,13 +121,9 @@ func (c Contributor) writeHttpdConf(layer layers.Layer) error {
 
 func (c Contributor) writePhpFpmConf(layer layers.Layer) error {
 	// this path must exist or php-fpm will fail to start
-	userIncludePath := filepath.Join(c.application.Root, ".php.fpm.d", "*.conf")
-	matches, err := filepath.Glob(userIncludePath)
+	userIncludePath, err := GetPhpFpmConfPath(c.application.Root)
 	if err != nil {
 		return err
-	}
-	if len(matches) == 0 {
-		userIncludePath = ""
 	}
 
 	phpFpmCfg := config.PhpFpmConfig{
@@ -252,27 +261,20 @@ func (c Contributor) installProcmgr(layer layers.Layer) error {
 	return helper.CopyFile(c.procmgr, filepath.Join(layer.Root, "bin", "procmgr"))
 }
 
-// Identity make Contributor satisfy the Identifiable interface.
-func (c Contributor) Identity() (string, string) {
-	return "PHP App", ""
-}
-
 // Contribute contributes an expanded PHP to a cache layer.
 func (c Contributor) Contribute() error {
 	if c.isWebApp {
 		c.logger.FirstLine("Configuring PHP Web Application")
 
 		l := c.layers.Layer(WebDependency)
-		l.Touch()
-		return l.Contribute(c, c.contributeWebApp, c.flags()...)
+		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
 	}
 
 	if c.isScript {
 		c.logger.FirstLine("Configuring PHP Script")
 
 		l := c.layers.Layer(ScriptDependency)
-		l.Touch()
-		return l.Contribute(c, c.contributeScript, c.flags()...)
+		return l.Contribute(c.metadata, c.contributeScript, c.flags()...)
 	}
 
 	c.logger.Info("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")

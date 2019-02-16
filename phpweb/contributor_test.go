@@ -254,4 +254,18 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 		Expect(info.String()).To(ContainSubstring("WARNING: `does/not/exist.php` start script not found. App will not start unless you specify a custom start command."))
 	})
+
+	it("generates Metadata", func() {
+		yaml := "{'php': {'webserver': 'httpd'}}"
+		test.WriteFile(t, filepath.Join(f.Build.Application.Root, "buildpack.yml"), yaml)
+		test.WriteFile(t, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), "")
+
+		c, _, err := NewContributor(f.Build)
+		Expect(err).To(Not(HaveOccurred()))
+
+		Expect(c.metadata.Name).To(Equal("PHP Web"))
+		Expect(c.metadata.BuildpackVersion).To(Equal("1.0"))
+		Expect(c.metadata.BuildpackYAMLHash).To(Equal("2c88cb132cbef68d6610c82941f171f325cab2d31a024c121b822c4875d50996"))
+		Expect(c.metadata.PhpFpmUserConfig).To(BeTrue())
+	})
 }

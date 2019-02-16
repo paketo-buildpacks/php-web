@@ -1,16 +1,19 @@
 package phpweb
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -108,15 +111,70 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 // LoadAvailablePHPExtensions locates available extensions and returns the list
 func LoadAvailablePHPExtensions(phpLayerRoot string, version string) ([]string, error) {
 	extensionFolder := fmt.Sprintf("no-debug-non-zts-%s", API(version))
-	extensionPath := filepath.Join(phpLayerRoot, "lib","php", "extensions", extensionFolder, "*.so")
+	extensionPath := filepath.Join(phpLayerRoot, "lib", "php", "extensions", extensionFolder, "*.so")
 	extensions, err := filepath.Glob(extensionPath)
-	if err !=nil {
+	if err != nil {
 		return []string{}, err
 	}
 
-	for i:=0; i < len(extensions); i++ {
-		extensions[i]= strings.Trim(filepath.Base(extensions[i]),".so")
+	for i := 0; i < len(extensions); i++ {
+		extensions[i] = strings.Trim(filepath.Base(extensions[i]), ".so")
 	}
 
 	return extensions, nil
+}
+
+// GetPhpFpmConfPath will look to see if a user has specified custom PHP-FPM config & if so return the path. Returns an empty string if not specified.
+func GetPhpFpmConfPath(appRoot string) (string, error) {
+	userIncludePath := filepath.Join(appRoot, ".php.fpm.d", "*.conf")
+	matches, err := filepath.Glob(userIncludePath)
+	if err != nil {
+		return "", err
+	}
+	if len(matches) == 0 {
+		userIncludePath = ""
+	}
+
+	return userIncludePath, nil
+}
+
+// Metadata that used to determine if the buildpack will contribute updated configs
+//
+// We want to generate new configuration if the following happens:
+//   - The buildpack version changes, cause our base config files might change
+//   - The user's buildpack.yml file changes, cause values from this file are passed into the config
+//   - If the user has custom PHP FPM. When there is/isn't custom PHP-FPM config, this changes the
+//     config files that are generated (because PHP-FPM freaks out if you Include config, but
+//     the included path doesn't exist or have any actual config files)
+//
+// If more conditions arise which affect how this buildpack generates config then we need
+// to update this Metadata to track those as well.
+type Metadata struct {
+	Name              string
+	BuildpackVersion  string
+	BuildpackYAMLHash string
+	PhpFpmUserConfig  bool
+}
+
+// NewMetadata creates new metadata with the expected name
+func NewMetadata(version string) Metadata {
+	return Metadata{
+		Name:             "PHP Web",
+		BuildpackVersion: version,
+	}
+}
+
+// UpdateHashFromFile will update Metadata.BuildpackYAMLHash with the contents at the specified path
+func (m *Metadata) UpdateHashFromFile(buildpackYAMLPath string) {
+	buf, err := ioutil.ReadFile(buildpackYAMLPath)
+	if err != nil {
+		buf = []byte(time.Now().UTC().Format("2006-01-02T15:04:05Z07:00.000"))
+	}
+	hash := sha256.Sum256(buf)
+	m.BuildpackYAMLHash = hex.EncodeToString(hash[:])
+}
+
+// Identity provides libcfbuildpack with information to decide if it should contribute
+func (m Metadata) Identity() (name string, version string) {
+	return m.Name, fmt.Sprintf("%s:%s:%v", m.BuildpackVersion, m.BuildpackYAMLHash, m.PhpFpmUserConfig)
 }
