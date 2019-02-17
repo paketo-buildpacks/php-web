@@ -43,9 +43,6 @@ type Contributor struct {
 	phpDep        buildplan.Dependency
 	isWebApp      bool
 	isScript      bool
-	webserver     string
-	webdir        string
-	script        string
 	procmgr       string
 	metadata      Metadata
 }
@@ -79,9 +76,6 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		phpDep:        phpDep,
 		isWebApp:      isWebApp,
 		isScript:      isScript,
-		webserver:     buildpackYAML.Config.WebServer,
-		webdir:        buildpackYAML.Config.WebDirectory,
-		script:        buildpackYAML.Config.Script,
 		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
 		metadata:      metadata,
 	}
@@ -104,10 +98,6 @@ func (c Contributor) writePhpIni(layer layers.Layer) error {
 }
 
 func (c Contributor) writeHttpdConf(layer layers.Layer) error {
-	if len(c.buildpackYAML.Config.WebDirectory) == 0 {
-		c.buildpackYAML.Config.WebDirectory = "htdocs"
-	}
-
 	httpdCfg := config.HttpdConfig{
 		ServerAdmin:  "admin@localhost", //TODO: pull from httpd.BuildpackYAML
 		WebDirectory: c.buildpackYAML.Config.WebDirectory,
@@ -163,18 +153,11 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		return err
 	}
 
-	if len(c.webdir) == 0 {
-		c.webdir = "htdocs"
-	}
-	c.logger.SubsequentLine("Using web directory: %s", c.webdir)
+	c.logger.SubsequentLine("Using web directory: %s", c.buildpackYAML.Config.WebServer)
 
-	if len(c.webserver) == 0 {
-		c.webserver = ApacheHttpd
-	}
-
-	if strings.ToLower(c.webserver) == PhpWebServer {
+	if strings.ToLower(c.buildpackYAML.Config.WebServer) == PhpWebServer {
 		c.logger.SubsequentLine("Using PHP built-in server")
-		webdir := filepath.Join(c.application.Root, c.webdir)
+		webdir := filepath.Join(c.application.Root, c.buildpackYAML.Config.WebDirectory)
 		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s", webdir)
 
 		return c.layers.WriteMetadata(layers.Metadata{
@@ -185,7 +168,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		})
 	}
 
-	if strings.ToLower(c.webserver) == ApacheHttpd {
+	if strings.ToLower(c.buildpackYAML.Config.WebServer) == ApacheHttpd {
 		c.logger.SubsequentLine("Using Apache Web Server")
 
 		if err := c.installProcmgr(layer); err != nil {
@@ -221,7 +204,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		return c.layers.WriteMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml)}}})
 	}
 
-	if strings.ToLower(c.webserver) == Nginx {
+	if strings.ToLower(c.buildpackYAML.Config.WebServer) == Nginx {
 		// TODO: write out nginx.conf to c.application.Root
 		c.logger.SubsequentLine("Using Nginx")
 	}
@@ -234,10 +217,7 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 		return err
 	}
 
-	if len(c.script) == 0 {
-		c.script = "app.php"
-	}
-	scriptPath := filepath.Join(c.application.Root, c.script)
+	scriptPath := filepath.Join(c.application.Root, c.buildpackYAML.Config.Script)
 
 	scriptExists, err := helper.FileExists(scriptPath)
 	if err != nil {
@@ -245,7 +225,7 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 	}
 
 	if !scriptExists {
-		c.logger.Info("WARNING: `%s` start script not found. App will not start unless you specify a custom start command.", c.script)
+		c.logger.Info("WARNING: `%s` start script not found. App will not start unless you specify a custom start command.", c.buildpackYAML.Config.Script)
 	}
 
 	command := fmt.Sprintf("php %s", scriptPath)

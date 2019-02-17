@@ -91,7 +91,15 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
 
 			Expect(err).To(Succeed())
-			Expect(loaded).To(Equal(BuildpackYAML{}))
+			Expect(loaded).To(Equal(BuildpackYAML{
+				Config{
+					Version:      "",
+					WebServer:    "httpd",
+					WebDirectory: "htdocs",
+					LibDirectory: "lib",
+					Script:       "app.php",
+				},
+			}))
 		})
 
 		it("can load a version & web server", func() {
@@ -101,8 +109,11 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
 			actual := BuildpackYAML{
 				Config: Config{
-					Version:   "1.0.0",
-					WebServer: "httpd",
+					Version:      "1.0.0",
+					WebServer:    "httpd",
+					WebDirectory: "htdocs",
+					LibDirectory: "lib",
+					Script:       "app.php",
 				},
 			}
 

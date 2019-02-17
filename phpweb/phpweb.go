@@ -87,6 +87,12 @@ type Config struct {
 // LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
 func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML, configFile := BuildpackYAML{}, filepath.Join(appRoot, "buildpack.yml")
+
+	buildpackYAML.Config.LibDirectory = "lib"
+	buildpackYAML.Config.WebDirectory = "htdocs"
+	buildpackYAML.Config.WebServer = ApacheHttpd
+	buildpackYAML.Config.Script = "app.php"
+
 	if exists, err := helper.FileExists(configFile); err != nil {
 		return BuildpackYAML{}, err
 	} else if exists {

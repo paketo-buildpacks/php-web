@@ -56,7 +56,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("starts a web app with `php -S`", func() {
 		c.isWebApp = true
-		c.webserver = PhpWebServer
+		c.buildpackYAML.Config.WebServer = PhpWebServer
 
 		Expect(c.Contribute()).To(Succeed())
 
@@ -71,8 +71,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("starts a web app with a custom webdir", func() {
 		c.isWebApp = true
-		c.webserver = PhpWebServer
-		c.webdir = "public"
+		c.buildpackYAML.Config.WebServer = PhpWebServer
+		c.buildpackYAML.Config.WebDirectory = "public"
 
 		Expect(c.Contribute()).To(Succeed())
 
@@ -87,7 +87,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
 		c.isWebApp = true
-		c.webserver = PhpWebServer
+		c.buildpackYAML.Config.WebServer = PhpWebServer
 
 		layer := f.Build.Layers.Layer(WebDependency)
 		Expect(c.Contribute()).To(Succeed())
@@ -108,7 +108,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("starts a web app with HTTPD", func() {
 		c.isWebApp = true
-		c.webserver = ApacheHttpd
+		c.buildpackYAML.Config.WebServer = ApacheHttpd
 
 		Expect(c.Contribute()).To(Succeed())
 
@@ -187,7 +187,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
 		c.isWebApp = true
-		c.webserver = ApacheHttpd
+		c.buildpackYAML.Config.WebServer = ApacheHttpd
 
 		layer := f.Build.Layers.Layer(WebDependency)
 		Expect(c.Contribute()).To(Succeed())
@@ -230,7 +230,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 	it("starts a script using custom script path/name", func() {
 		c.isScript = true
-		c.script = "relative/path/to/my/script.php"
+		c.buildpackYAML.Config.Script = "relative/path/to/my/script.php"
 
 		Expect(c.Contribute()).To(Succeed())
 
@@ -249,7 +249,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 		c.logger = logger.Logger{Logger: bplogger.NewLogger(debug, info)}
 		c.isScript = true
-		c.script = "does/not/exist.php"
+		c.buildpackYAML.Config.Script = "does/not/exist.php"
 
 		Expect(c.Contribute()).To(Succeed())
 		Expect(info.String()).To(ContainSubstring("WARNING: `does/not/exist.php` start script not found. App will not start unless you specify a custom start command."))
