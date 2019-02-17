@@ -72,8 +72,10 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 	it("generates a php.ini from the template", func() {
 		cfg := PhpIniConfig{
-			PhpHome: "/php/home",
-			PhpAPI:  "20180101",
+			AppRoot:      "/app",
+			LibDirectory: "lib",
+			PhpHome:      "/php/home",
+			PhpAPI:       "20180101",
 		}
 
 		err := ProcessTemplateToFile(PhpIniTemplate, filepath.Join(f.Home, "php.ini"), cfg)
@@ -82,7 +84,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		result, err := ioutil.ReadFile(filepath.Join(f.Home, "php.ini"))
 
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(ContainSubstring(`include_path = "/php/home/lib/php:"`))
+		Expect(result).To(ContainSubstring(`include_path = "/php/home/lib/php:/app/lib"`))
 		Expect(result).To(ContainSubstring(`extension_dir = "/php/home/php/lib/php/extensions/no-debug-non-zts-20180101"`))
 	})
 

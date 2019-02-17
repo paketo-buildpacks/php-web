@@ -91,8 +91,10 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 
 func (c Contributor) writePhpIni(layer layers.Layer) error {
 	phpIniCfg := config.PhpIniConfig{
-		PhpHome: layer.Root,
-		PhpAPI:  API(c.phpDep.Version),
+		AppRoot:      c.application.Root,
+		LibDirectory: c.buildpackYAML.Config.LibDirectory,
+		PhpHome:      layer.Root,
+		PhpAPI:       API(c.phpDep.Version),
 	}
 	phpIniPath := filepath.Join(layer.Root, "etc", "php.ini")
 	if err := config.ProcessTemplateToFile(config.PhpIniTemplate, phpIniPath, phpIniCfg); err != nil {

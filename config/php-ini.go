@@ -730,7 +730,7 @@ default_charset = "UTF-8"
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; UNIX: "/path1:/path2"
-include_path = "{{.PhpHome}}/lib/php:"
+include_path = "{{.PhpHome}}/lib/php:{{.AppRoot}}/{{.LibDirectory}}"
 ;
 ; Windows: "\path1;\path2"
 ;include_path = ".;c:\php\includes"

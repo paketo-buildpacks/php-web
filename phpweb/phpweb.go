@@ -80,6 +80,7 @@ type Config struct {
 	Version      string `yaml:"version"`
 	WebServer    string `yaml:"webserver"`
 	WebDirectory string `yaml:"webdirectory"`
+	LibDirectory string `yaml:"libdirectory"`
 	Script       string `yaml:"script"`
 }
 
