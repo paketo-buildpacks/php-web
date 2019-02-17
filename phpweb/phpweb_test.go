@@ -168,7 +168,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			Expect(md.BuildpackYAMLHash).To(Equal("7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"))
 		})
 
-		it("has a hash of the date when buildpack.yml doesn't exist", func() {
+		it("has a hash of `No buildpack.yml File` when buildpack.yml doesn't exist", func() {
 			md := NewMetadata("1.0")
 			md.UpdateHashFromFile(filepath.Join(f.Build.Application.Root, "buildpack.yml"))
 
@@ -178,7 +178,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 
 			md.UpdateHashFromFile(filepath.Join(f.Build.Application.Root, "buildpack.yml"))
 
-			Expect(firstHash).ToNot(Equal(md.BuildpackYAMLHash))
+			Expect(firstHash).To(Equal(md.BuildpackYAMLHash))
 		})
 
 		it("generates an identity", func() {
@@ -192,7 +192,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			name, version := md.Identity()
 
 			Expect(name).To(Equal("PHP Web"))
-			Expect(version).To(Equal("1.0:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069:true"))
+			Expect(version).To(Equal("729055944455e83c1d148e6ec8609e161281f9fc"))
 		})
 	})
 

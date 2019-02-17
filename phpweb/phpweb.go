@@ -1,6 +1,7 @@
 package phpweb
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -8,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
@@ -168,7 +168,7 @@ func NewMetadata(version string) Metadata {
 func (m *Metadata) UpdateHashFromFile(buildpackYAMLPath string) {
 	buf, err := ioutil.ReadFile(buildpackYAMLPath)
 	if err != nil {
-		buf = []byte(time.Now().UTC().Format("2006-01-02T15:04:05Z07:00.000"))
+		buf = []byte("No buildpack.yml File")
 	}
 	hash := sha256.Sum256(buf)
 	m.BuildpackYAMLHash = hex.EncodeToString(hash[:])
@@ -176,5 +176,6 @@ func (m *Metadata) UpdateHashFromFile(buildpackYAMLPath string) {
 
 // Identity provides libcfbuildpack with information to decide if it should contribute
 func (m Metadata) Identity() (name string, version string) {
-	return m.Name, fmt.Sprintf("%s:%s:%v", m.BuildpackVersion, m.BuildpackYAMLHash, m.PhpFpmUserConfig)
+	hash := sha1.Sum([]byte(fmt.Sprintf("%s:%s:%v", m.BuildpackVersion, m.BuildpackYAMLHash, m.PhpFpmUserConfig)))
+	return m.Name, hex.EncodeToString(hash[:])
 }
