@@ -7,7 +7,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 
 echo "Target OS is $TARGET_OS"
 echo -n "Creating buildpack directory..."
-bp_dir=/tmp/"${PWD##*/}"_$(openssl rand -hex 12)
+bp_dir="${PWD##*/}"_$(openssl rand -hex 12)
 mkdir $bp_dir
 echo "done"
 
@@ -24,4 +24,10 @@ for b in $(ls cmd); do
     GOOS=$TARGET_OS go build -o $bp_dir/bin/$b ./cmd/$b
     echo "done"
 done
-echo "Buildpack packaged into: $bp_dir"
+
+fullPath=$(realpath "$bp_dir")
+echo "Buildpack packaged into: $fullPath"
+
+pushd $bp_dir
+    tar czvf ../nodejs-cnb.tgz *
+popd

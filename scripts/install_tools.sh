@@ -2,7 +2,6 @@
 set -euo pipefail
 
 PACK_VERSION=latest
-
 usage() {
     echo "Usage:   install_tools.sh <version: optional>"
     echo "Example: install_tools.sh 0.0.9"

@@ -4,8 +4,8 @@ set -euo pipefail
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 
 if [[ ! -d integration ]]; then
-    echo "No integration tests"
-    exit 1
+    echo -e "\n\033[0;31m** WARNING  No Integration tests **\033[0m"
+    exit 0
 fi
 
 PACK_VERSION=${PACK_VERSION:-""}
@@ -19,8 +19,8 @@ export CNB_RUN_IMAGE=${CNB_RUN_IMAGE:-cfbuildpacks/cflinuxfs3-cnb-experimental:r
 docker pull $CNB_BUILD_IMAGE
 docker pull $CNB_RUN_IMAGE
 
-set +e
 echo "Run Buildpack Runtime Integration Tests"
+set +e
 go test ./integration/... -v -run Integration
 exit_code=$?
 
