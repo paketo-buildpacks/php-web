@@ -80,7 +80,7 @@ func (c Contributor) Contribute() error {
 			return err
 		}
 
-		return c.launchLayer.WriteMetadata(layers.Metadata{
+		return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{{"web", fmt.Sprintf(`httpd -f %s -k start -DFOREGROUND`, filepath.Join(c.app.Root, "httpd.conf"))}},
 		})
 	}, c.flags()...)

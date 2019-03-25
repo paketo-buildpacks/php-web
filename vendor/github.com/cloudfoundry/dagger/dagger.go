@@ -10,17 +10,21 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"github.com/pkg/errors"
 )
 
 const (
-	CFLINUXFS3 = "org.cloudfoundry.stacks.cflinuxfs3"
-	BIONIC     = "io.buildpacks.stacks.bionic"
+	CFLINUXFS3          = "org.cloudfoundry.stacks.cflinuxfs3"
+	BIONIC              = "io.buildpacks.stacks.bionic"
+	DEFAULT_BUILD_IMAGE = "cfbuildpacks/cflinuxfs3-cnb-experimental:build"
+	DEFAULT_RUN_IMAGE   = "cfbuildpacks/cflinuxfs3-cnb-experimental:run"
 )
 
 var downloadCache sync.Map
@@ -31,7 +35,45 @@ func init() {
 }
 
 func PackageBuildpack() (string, error) {
-	cmd := exec.Command("../scripts/package.sh")
+	cmd := exec.Command("./scripts/package.sh")
+	cmd.Dir = "../"
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	r := regexp.MustCompile("Buildpack packaged into: (.*)")
+	bpDir := r.FindStringSubmatch(string(out))[1]
+	return bpDir, nil
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func TempBuildpackPath(name string) string {
+	return filepath.Join("/tmp", name+"-"+RandStringRunes(16))
+}
+
+func PackageCachedBuildpack(bpPath string) (string, string, error) {
+	tarFile := TempBuildpackPath(filepath.Base(bpPath)) // + ".tgz"
+	cmd := exec.Command("./.bin/packager", tarFile)
+	cmd.Dir = bpPath
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+
+	return tarFile, string(out), err
+}
+
+func PackageLocalBuildpack(name string) (string, error) {
+	cmd := exec.Command("./scripts/package.sh")
+	cmd.Dir = fmt.Sprintf("../../%s", name)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
@@ -99,25 +141,28 @@ func GetLatestBuildpack(name string) (string, error) {
 	return dest, helper.ExtractTarGz(downloadFile.Name(), dest, 0)
 }
 
+// This returns the build logs as part of the error case
 func PackBuild(appDir string, buildpacks ...string) (*App, error) {
-	appImageName := randomString(16)
-	buildStdout := &bytes.Buffer{}
-	buildStderr := &bytes.Buffer{}
+	return PackBuildNamedImage(randomString(16), appDir, buildpacks...)
+}
 
-	cmd := exec.Command("pack", "build", appImageName, "--builder", "cfbuildpacks/cflinuxfs3-cnb-test-builder", "--clear-cache")
+// This pack builds an app from appDir into appImageName, to allow specifying an image name in a test
+func PackBuildNamedImage(appImageName, appDir string, buildpacks ...string) (*App, error) {
+	buildLogs := &bytes.Buffer{}
+
+	cmd := exec.Command("pack", "build", appImageName, "--builder", "cfbuildpacks/cflinuxfs3-cnb-test-builder")
 	for _, bp := range buildpacks {
 		cmd.Args = append(cmd.Args, "--buildpack", bp)
 	}
 	cmd.Dir = appDir
-	cmd.Stdout = io.MultiWriter(os.Stdout, buildStdout)
-	cmd.Stderr = io.MultiWriter(os.Stderr, buildStderr)
+	cmd.Stdout = io.MultiWriter(os.Stdout, buildLogs)
+	cmd.Stderr = io.MultiWriter(os.Stderr, buildLogs)
 	if err := cmd.Run(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, buildLogs.String())
 	}
 
 	app := &App{
-		BuildStderr: buildStderr,
-		BuildStdout: buildStdout,
+		buildLogs:   buildLogs,
 		Env:         make(map[string]string),
 		imageName:   appImageName,
 		fixtureName: appDir,
@@ -125,9 +170,33 @@ func PackBuild(appDir string, buildpacks ...string) (*App, error) {
 	return app, nil
 }
 
+func BuildCFLinuxFS3() error {
+	cmd := exec.Command("pack", "stacks", "--no-color")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "could not get stack list %s", out)
+	}
+
+	contains, err := regexp.Match(CFLINUXFS3, out)
+
+	if err != nil {
+		return errors.Wrap(err, "error running regex match")
+	} else if contains {
+		fmt.Println("cflinuxfs3 stack already added")
+		return nil
+	}
+
+	cmd = exec.Command("pack", "add-stack", CFLINUXFS3, "--build-image", DEFAULT_BUILD_IMAGE, "--run-image", DEFAULT_RUN_IMAGE)
+	if err = cmd.Run(); err != nil {
+		return errors.Wrap(err, "could not add stack")
+	}
+
+	return nil
+}
+
 type App struct {
-	BuildStdout *bytes.Buffer
-	BuildStderr *bytes.Buffer
+	Memory      string
+	buildLogs   *bytes.Buffer
 	Env         map[string]string
 	logProc     *exec.Cmd
 	imageName   string
@@ -143,6 +212,10 @@ type HealthCheck struct {
 	timeout  string
 }
 
+func (a *App) BuildLogs() string {
+	return stripColor(a.buildLogs.String())
+}
+
 func (a *App) SetHealthCheck(command, interval, timeout string) {
 	a.healthCheck = HealthCheck{
 		command:  command,
@@ -155,6 +228,10 @@ func (a *App) Start() error {
 	buf := &bytes.Buffer{}
 
 	args := []string{"run", "-d", "-P"}
+	if a.Memory != "" {
+		args = append(args, "--memory", a.Memory)
+	}
+
 	if a.healthCheck.command != "" {
 		args = append(args, "--health-cmd", a.healthCheck.command)
 	}
@@ -243,15 +320,22 @@ func (a *App) Destroy() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-
 	cmd = exec.Command("docker", "image", "prune", "-f")
 	if err := cmd.Run(); err != nil {
 		return err
 	}
 
 	a.imageName = ""
-
 	return nil
+}
+
+func (a *App) Files(path string) ([]string, error) {
+	cmd := exec.Command("docker", "run", a.imageName, "find", "./..", "-wholename", fmt.Sprintf("*%s*", path))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return []string{}, err
+	}
+	return strings.Split(string(output), "\n"), nil
 }
 
 func (a *App) Info() (cID string, imageID string, cacheID []string, e error) {
@@ -270,7 +354,7 @@ func (a *App) Logs() (string, error) {
 		return "", err
 	}
 
-	return string(output), nil
+	return stripColor(string(output)), nil
 }
 
 func (a *App) HTTPGet(path string) (string, map[string][]string, error) {
@@ -289,6 +373,18 @@ func (a *App) HTTPGet(path string) (string, map[string][]string, error) {
 	}
 
 	return string(body), resp.Header, nil
+}
+
+func (a *App) HTTPGetBody(path string) (string, error) {
+	resp, _, err := a.HTTPGet(path)
+	return resp, err
+}
+
+func stripColor(input string) string {
+	const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+
+	var re = regexp.MustCompile(ansi)
+	return re.ReplaceAllString(input, "")
 }
 
 func getCacheVolumes() ([]string, error) {

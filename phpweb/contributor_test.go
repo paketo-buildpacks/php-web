@@ -61,10 +61,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "htdocs")
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
 				{"task", command},
+				{"web", command},
 			},
 		}))
 	})
@@ -77,10 +77,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "public")
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
 				{"task", command},
+				{"web", command},
 			},
 		}))
 	})
@@ -115,7 +115,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		phpLayer := f.Build.Layers.Layer(WebDependency)
 		procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", fmt.Sprintf("procmgr %s", procFile)},
 			},
@@ -154,7 +154,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		phpLayer := f.Build.Layers.Layer(WebDependency)
 		procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", fmt.Sprintf("procmgr %s", procFile)},
 			},
@@ -220,10 +220,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "app.php")
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
 				{"task", command},
+				{"web", command},
 			},
 		}))
 	})
@@ -235,10 +235,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(c.Contribute()).To(Succeed())
 
 		command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "relative/path/to/my/script.php")
-		Expect(f.Build.Layers).To(test.HaveLaunchMetadata(layers.Metadata{
+		Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command},
 				{"task", command},
+				{"web", command},
 			},
 		}))
 	})

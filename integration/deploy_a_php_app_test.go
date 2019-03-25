@@ -60,7 +60,7 @@ func testDeloyAPHPApp(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			// ensure correct version of PHP is installed
-			Expect(app.BuildStdout.String()).To(MatchRegexp(`----->.*PHP.*7\.2\.\d+.*Contributing.* to layer`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`----->.*PHP.*7\.2\.\d+.*Contributing.* to layer`))
 
 			// ensure X-Powered-By header is removed so as not to leak information
 			body, headers, err := app.HTTPGet("/")

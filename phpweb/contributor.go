@@ -160,7 +160,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		webdir := filepath.Join(c.application.Root, c.buildpackYAML.Config.WebDirectory)
 		command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s", webdir)
 
-		return c.layers.WriteMetadata(layers.Metadata{
+		return c.layers.WriteApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
 				{"web", command},
 				{"task", command},
@@ -201,7 +201,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 			return fmt.Errorf("failed to write procs.yml: %s", err)
 		}
 
-		return c.layers.WriteMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml)}}})
+		return c.layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml)}}})
 	}
 
 	if strings.ToLower(c.buildpackYAML.Config.WebServer) == Nginx {
@@ -230,7 +230,7 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 
 	command := fmt.Sprintf("php %s", scriptPath)
 
-	return c.layers.WriteMetadata(layers.Metadata{
+	return c.layers.WriteApplicationMetadata(layers.Metadata{
 		Processes: []layers.Process{
 			{"web", command},
 			{"task", command},
@@ -251,6 +251,7 @@ func (c Contributor) Contribute() error {
 		l := c.layers.Layer(WebDependency)
 		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
 	}
+
 
 	if c.isScript {
 		c.logger.FirstLine("Configuring PHP Script")
