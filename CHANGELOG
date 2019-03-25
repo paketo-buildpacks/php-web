@@ -1,3 +1,14 @@
+v0.0.2 Mar 25, 2019
+====================
+
+* Bump libcfbuildpack and dagger
+  (https://www.pivotaltracker.com/story/show/164601296)
+  (https://www.pivotaltracker.com/story/show/163595064)
+
+* Add support for specifying a library directory through buildpack.yml. This gets put onto PHP's include_path.
+
+* When no buildpack.yml exists, write out sha1 of metadata, and only rebuild app if user adds buildpack.yml.
+
 v0.0.1 Jan 31, 2019
 ====================
 
