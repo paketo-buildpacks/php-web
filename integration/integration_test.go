@@ -33,9 +33,7 @@ func TestIntegration(t *testing.T) {
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
-
 		RegisterTestingT(t)
-
 	})
 
 	when("push simple app", func() {

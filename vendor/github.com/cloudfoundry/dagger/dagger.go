@@ -2,7 +2,7 @@ package dagger
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,6 +15,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/pkg/errors"
@@ -57,6 +60,24 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
+func GetClient(ctx context.Context) *github.Client {
+	git_token := os.Getenv("GIT_TOKEN")
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: git_token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+
+	client := github.NewClient(http.DefaultClient)
+	if git_token == "" {
+		fmt.Println("Using unauthorized github api, consider setting the GIT_TOKEN environment variable")
+		fmt.Println("More info on Github tokens here: https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line")
+		client = github.NewClient(tc)
+	}
+
+	return client
+}
+
 func TempBuildpackPath(name string) string {
 	return filepath.Join("/tmp", name+"-"+RandStringRunes(16))
 }
@@ -71,9 +92,9 @@ func PackageCachedBuildpack(bpPath string) (string, string, error) {
 	return tarFile, string(out), err
 }
 
-func PackageLocalBuildpack(name string) (string, error) {
+func PackageLocalBuildpack(name, path string) (string, error) {
 	cmd := exec.Command("./scripts/package.sh")
-	cmd.Dir = fmt.Sprintf("../../%s", name)
+	cmd.Dir = path
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
@@ -85,11 +106,9 @@ func PackageLocalBuildpack(name string) (string, error) {
 }
 
 func GetLatestBuildpack(name string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/cloudfoundry/%s/releases/latest", name))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+	uri := fmt.Sprintf("https://api.github.com/repos/cloudfoundry/%s/releases/latest", name)
+	ctx := context.Background()
+	client := GetClient(ctx)
 
 	release := struct {
 		TagName string `json:"tag_name"`
@@ -97,11 +116,13 @@ func GetLatestBuildpack(name string) (string, error) {
 			BrowserDownloadURL string `json:"browser_download_url"`
 		} `json:"assets"`
 	}{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+	request, err := http.NewRequest(http.MethodGet, uri, nil)
+	if err != nil {
 		return "", err
 	}
-
+	if _, err := client.Do(ctx, request, &release); err != nil {
+		return "", err
+	}
 	if len(release.Assets) == 0 {
 		return "", fmt.Errorf("there are no releases for %s", name)
 	}
@@ -112,11 +133,16 @@ func GetLatestBuildpack(name string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+
 		defer buildpackResp.Body.Close()
 
 		contents, err = ioutil.ReadAll(buildpackResp.Body)
 		if err != nil {
 			return "", err
+		}
+
+		if buildpackResp.StatusCode != http.StatusOK {
+			return "", errors.Errorf("Erroring Getting buildpack : status %d : %s", buildpackResp.StatusCode, contents)
 		}
 
 		downloadCache.Store(name+release.TagName, contents)
@@ -168,30 +194,6 @@ func PackBuildNamedImage(appImageName, appDir string, buildpacks ...string) (*Ap
 		fixtureName: appDir,
 	}
 	return app, nil
-}
-
-func BuildCFLinuxFS3() error {
-	cmd := exec.Command("pack", "stacks", "--no-color")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return errors.Wrapf(err, "could not get stack list %s", out)
-	}
-
-	contains, err := regexp.Match(CFLINUXFS3, out)
-
-	if err != nil {
-		return errors.Wrap(err, "error running regex match")
-	} else if contains {
-		fmt.Println("cflinuxfs3 stack already added")
-		return nil
-	}
-
-	cmd = exec.Command("pack", "add-stack", CFLINUXFS3, "--build-image", DEFAULT_BUILD_IMAGE, "--run-image", DEFAULT_RUN_IMAGE)
-	if err = cmd.Run(); err != nil {
-		return errors.Wrap(err, "could not add stack")
-	}
-
-	return nil
 }
 
 type App struct {
@@ -261,7 +263,7 @@ func (a *App) Start() error {
 	a.containerId = buf.String()[:12]
 
 	ticker := time.NewTicker(1 * time.Second)
-	timeOut := time.After(40 * time.Second)
+	timeOut := time.After(2 * time.Minute)
 docker:
 	for {
 		select {
@@ -362,6 +364,8 @@ func (a *App) HTTPGet(path string) (string, map[string][]string, error) {
 	if err != nil {
 		return "", nil, err
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", nil, fmt.Errorf("received bad response from application")
