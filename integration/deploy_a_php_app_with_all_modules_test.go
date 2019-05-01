@@ -103,12 +103,19 @@ var ExpectedExtensions = [...]string{
 	"tideways_xhprof",
 	"ioncube"}
 
-
-	func TestDeployAPHPAppWithAllExtensions(t *testing.T) {
-	spec.Run(t, "Deploy a PHP app with all extensions", testDeployAPHPAppWithAllExtensions, spec.Report(report.Terminal{}))
+func TestDeployAPHPAppWithAllExtensionsIntegration(t *testing.T) {
+	RegisterTestingT(t)
+	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
+	Expect(err).NotTo(HaveOccurred())
+	defer func() {
+		os.RemoveAll(phpWebBP)
+		os.RemoveAll(phpBP)
+		os.RemoveAll(httpdBP)
+	}()
+	spec.Run(t, "Deploy a PHP app with all extensions", testDeployAPHPAppWithAllExtensionsIntegration, spec.Report(report.Terminal{}))
 }
 
-func testDeployAPHPAppWithAllExtensions(t *testing.T, when spec.G, it spec.S) {
+func testDeployAPHPAppWithAllExtensionsIntegration(t *testing.T, when spec.G, it spec.S) {
 	var app *dagger.App
 
 	it.Before(func() {
@@ -116,17 +123,15 @@ func testDeployAPHPAppWithAllExtensions(t *testing.T, when spec.G, it spec.S) {
 
 		RegisterTestingT(t)
 
-		app, err = PreparePhpApp("php_modules")
+		app, err = PreparePhpApp("php_modules", phpBP, httpdBP, phpWebBP)
 		Expect(err).ToNot(HaveOccurred())
 	})
-
 
 	when("deploying a basic PHP app", func() {
 		it("loads key bundled extensions", func() {
 
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
-
 
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
@@ -140,8 +145,7 @@ func testDeployAPHPAppWithAllExtensions(t *testing.T, when spec.G, it spec.S) {
 				t.FailNow()
 			}
 
-			output, err :=app.Logs()
-
+			output, err := app.Logs()
 
 			for _, extension := range ExpectedExtensions {
 				Expect(output).To(ContainSubstring(extension))

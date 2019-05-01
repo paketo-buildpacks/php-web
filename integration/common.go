@@ -5,29 +5,38 @@ import (
 	"path/filepath"
 )
 
-func PreparePhpApp (appName string) (*dagger.App, error) {
-	phpWebBp, err := dagger.PackageBuildpack()
+
+func PrepareBuildpack() (phpWebBp, phpBp, httpdBp string, err error) {
+	root, err := dagger.FindBPRoot()
 	if err != nil {
-		return &dagger.App{}, nil
+		return "", "", "", err
 	}
 
-	phpBp, err := dagger.GetLatestBuildpack("php-cnb")
+	phpWebBp, err = dagger.PackageBuildpack(root)
 	if err != nil {
-		return &dagger.App{}, nil
+		return "", "", "", err
 	}
 
-	httpdBp, err := dagger.GetLatestBuildpack("httpd-cnb")
+	phpBp, err = dagger.GetLatestBuildpack("php-cnb")
 	if err != nil {
-		return &dagger.App{}, nil
+		return "", "", "", err
 	}
 
-	app, err := dagger.PackBuild(filepath.Join("fixtures", appName), phpBp, httpdBp, phpWebBp)
+	httpdBp, err = dagger.GetLatestBuildpack("httpd-cnb")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return phpWebBp, phpBp, httpdBp, nil
+}
+
+func PreparePhpApp(appName string, buildpacks ...string) (*dagger.App, error) {
+	app, err := dagger.PackBuild(filepath.Join("fixtures", appName), buildpacks...)
 	if err != nil {
 		return &dagger.App{}, nil
 	}
 
 	app.SetHealthCheck("", "3s", "1s")
-	app.Env["PORT"] = "8080"
 
 	return app, nil
 }

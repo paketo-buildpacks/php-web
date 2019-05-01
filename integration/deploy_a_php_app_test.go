@@ -29,24 +29,32 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDeployAPHPApp(t *testing.T) {
-	spec.Run(t, "Deploy A PHP App", testDeloyAPHPApp, spec.Report(report.Terminal{}))
+func TestDeployAPHPAppIntegration(t *testing.T) {
+	RegisterTestingT(t)
+	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
+	Expect(err).NotTo(HaveOccurred())
+	defer func() {
+		os.RemoveAll(phpWebBP)
+		os.RemoveAll(phpBP)
+		os.RemoveAll(httpdBP)
+	}()
+	spec.Run(t, "Deploy A PHP App", testDeployAPHPAppIntegration, spec.Report(report.Terminal{}))
 }
 
-func testDeloyAPHPApp(t *testing.T, when spec.G, it spec.S) {
+func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 	var app *dagger.App
 
 	it.Before(func() {
 		var err error
 
 		RegisterTestingT(t)
-		app, err = PreparePhpApp("php_app")
+		app, err = PreparePhpApp("php_app", phpBP, httpdBP, phpWebBP)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	when("deploying a basic PHP app", func() {
 		it("installs our hard-coded default version of PHP and does not return the version of PHP in the response headers", func() {
-			err := app.Start()
+			err = app.Start()
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
 				containerID, imageName, volumeIDs, err := app.Info()

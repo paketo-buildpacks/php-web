@@ -27,7 +27,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	phpWebBP, phpBP, httpdBP string
+	err                      error
+)
+
 func TestIntegration(t *testing.T) {
+	RegisterTestingT(t)
+	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
+	Expect(err).NotTo(HaveOccurred())
+	defer func() {
+		os.RemoveAll(phpWebBP)
+		os.RemoveAll(phpBP)
+		os.RemoveAll(httpdBP)
+	}()
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
@@ -39,7 +52,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	when("push simple app", func() {
 		it("servers simple php page", func() {
 
-			app, err := PreparePhpApp("simple_app")
+			app, err := PreparePhpApp("simple_app", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -65,7 +78,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 		it("servers simple php page hosted with built-in PHP server", func() {
 
-			app, err := PreparePhpApp("simple_app_php_only")
+			app, err := PreparePhpApp("simple_app_php_only", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -89,7 +102,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("runs a cli app", func() {
-			app, err := PreparePhpApp("simple_cli_app")
+			app, err := PreparePhpApp("simple_cli_app", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
 
 			app.SetHealthCheck("true", "3s", "1s")
