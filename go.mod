@@ -2,7 +2,7 @@ module github.com/cloudfoundry/php-web-cnb
 
 require (
 	github.com/buildpack/libbuildpack v1.14.0
-	github.com/cloudfoundry/dagger v0.0.0-20190401212155-44a90aadbea5
+	github.com/cloudfoundry/dagger v0.0.0-20190501162049-68790e774ad6
 	github.com/cloudfoundry/httpd-cnb v0.0.2
 	github.com/cloudfoundry/libcfbuildpack v1.53.0
 	github.com/cloudfoundry/php-cnb v0.0.2
