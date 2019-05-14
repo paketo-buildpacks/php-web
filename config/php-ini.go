@@ -943,6 +943,9 @@ default_socket_timeout = 60
 ;extension=tidy
 ;extension=xmlrpc
 ;extension=xsl
+{{ range $extension := .Extensions }}
+extension = {{ $extension }}
+{{ end }}
 
 ;;;;;;;;;;;;;;;;;;;
 ; Module Settings ;

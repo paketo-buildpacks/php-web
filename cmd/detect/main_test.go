@@ -94,6 +94,33 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			}))
 		})
 
+		it("passes through Metadata.build", func() {
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
+			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{
+				Metadata: buildplan.Metadata{
+					"build": true,
+				},
+			})
+			fakeVersion := "php.default.version"
+			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
+			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
+			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
+				"php-binary": buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						"launch": true,
+						"build": true,
+					},
+					Version: fakeVersion,
+				},
+				"php-web": buildplan.Dependency{},
+				"httpd": buildplan.Dependency{
+					Metadata: buildplan.Metadata{
+						"launch": true,
+					},
+				},
+			}))
+		})
+
 		it("defaults php.webserver to apache webserver", func() {
 			Expect(pickWebServer(phpweb.BuildpackYAML{})).To(Equal(httpd.Dependency))
 		})

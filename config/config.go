@@ -53,6 +53,7 @@ type PhpIniConfig struct {
 	LibDirectory string
 	PhpHome      string
 	PhpAPI       string
+	Extensions   []string
 }
 
 // PhpFpmConfig supplies values for templated php-fpm.conf

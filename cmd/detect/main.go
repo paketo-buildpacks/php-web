@@ -111,6 +111,14 @@ func runDetect(context detect.Detect) (int, error) {
 	}
 	version := phpweb.Version(buildpackYAML, context.Buildpack, plan)
 
+	phpMetadata := buildplan.Metadata{
+		"launch": true,
+	}
+	_, build := plan.Metadata["build"]
+	if build {
+		phpMetadata["build"] = true
+	}
+
 	webDir := pickWebDir(buildpackYAML)
 
 	webAppFound, err := searchForWebApp(context.Application.Root, webDir)
@@ -121,10 +129,8 @@ func runDetect(context detect.Detect) (int, error) {
 	if webAppFound {
 		return context.Pass(buildplan.BuildPlan{
 			php.Dependency: buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"launch": true,
-				},
-				Version: version,
+				Metadata: phpMetadata,
+				Version:  version,
 			},
 			phpweb.WebDependency: buildplan.Dependency{},
 			pickWebServer(buildpackYAML): buildplan.Dependency{
@@ -143,10 +149,8 @@ func runDetect(context detect.Detect) (int, error) {
 	if scriptFound {
 		return context.Pass(buildplan.BuildPlan{
 			php.Dependency: buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"launch": true,
-				},
-				Version: version,
+				Metadata: phpMetadata,
+				Version:  version,
 			},
 			phpweb.ScriptDependency: buildplan.Dependency{},
 		})
