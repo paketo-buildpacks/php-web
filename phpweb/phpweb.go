@@ -55,21 +55,6 @@ func Version(buildpackYAML BuildpackYAML, buildpack buildpack.Buildpack, depende
 	return "*"
 }
 
-// API returns the API string for the given PHP version
-func API(version string) string {
-	if strings.HasPrefix(version, "7.0") {
-		return "20151012"
-	} else if strings.HasPrefix(version, "7.1") {
-		return "20160303"
-	} else if strings.HasPrefix(version, "7.2") {
-		return "20170718"
-	} else if strings.HasPrefix(version, "7.3") {
-		return "20180731"
-	} else {
-		return ""
-	}
-}
-
 // BuildpackYAML represents user specified config options through `buildpack.yml`
 type BuildpackYAML struct {
 	Config Config `yaml:"php"`
@@ -116,10 +101,8 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 }
 
 // LoadAvailablePHPExtensions locates available extensions and returns the list
-func LoadAvailablePHPExtensions(phpLayerRoot string, version string) ([]string, error) {
-	extensionFolder := fmt.Sprintf("no-debug-non-zts-%s", API(version))
-	extensionPath := filepath.Join(phpLayerRoot, "lib", "php", "extensions", extensionFolder, "*.so")
-	extensions, err := filepath.Glob(extensionPath)
+func LoadAvailablePHPExtensions() ([]string, error) {
+	extensions, err := filepath.Glob(filepath.Join(os.Getenv("PHP_EXTENSION_DIR"), "*"))
 	if err != nil {
 		return []string{}, err
 	}
