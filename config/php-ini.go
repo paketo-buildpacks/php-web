@@ -946,6 +946,9 @@ default_socket_timeout = 60
 {{ range $extension := .Extensions }}
 extension = {{ $extension }}.so
 {{ end }}
+{{ range $zend_extension := .ZendExtensions }}
+zend_extension = {{ $zend_extension }}.so
+{{ end }}
 
 ;;;;;;;;;;;;;;;;;;;
 ; Module Settings ;

@@ -49,11 +49,12 @@ type HttpdConfig struct {
 
 // PhpIniConfig supplies values for templated php.ini
 type PhpIniConfig struct {
-	AppRoot      string
-	LibDirectory string
-	PhpHome      string
-	PhpAPI       string
-	Extensions   []string
+	AppRoot        string
+	LibDirectory   string
+	PhpHome        string
+	PhpAPI         string
+	Extensions     []string
+	ZendExtensions []string
 }
 
 // PhpFpmConfig supplies values for templated php-fpm.conf
