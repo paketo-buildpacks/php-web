@@ -17,8 +17,7 @@ func PrepareBuildpack() (phpWebBp, phpBp, httpdBp string, err error) {
 		return "", "", "", err
 	}
 
-	//phpBp, err = dagger.GetLatestBuildpack("php-cnb")
-	phpBp, err = dagger.PackageBuildpack("/Users/pivotal/workspace/php-cnb")
+	phpBp, err = dagger.GetLatestBuildpack("php-cnb")
 	if err != nil {
 		return "", "", "", err
 	}
