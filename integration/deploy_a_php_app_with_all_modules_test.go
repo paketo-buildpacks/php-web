@@ -43,7 +43,7 @@ var ExpectedExtensions = [...]string{
 	"ldap",
 	"mbstring",
 	"mysqli",
-	"opcache",
+	"Zend OPcache",
 	"openssl",
 	"pcntl",
 	"pdo",
@@ -72,14 +72,14 @@ var ExpectedExtensions = [...]string{
 	"mailparse",
 	"mongodb",
 	"msgpack",
-	"oauth",
+	"OAuth",
 	"odbc",
-	"pdo_odbc",
+	"PDO_ODBC",
 	"pdo_sqlsrv",
 	"rdkafka",
 	"redis",
 	"sqlsrv",
-	"stomp",
+	"Stomp",
 	"xdebug",
 	"yaf",
 	"yaml",
@@ -88,7 +88,7 @@ var ExpectedExtensions = [...]string{
 	"tidy",
 	"enchant",
 	"interbase",
-	"pdo_firebird",
+	"PDO_Firebird",
 	"readline",
 	"wddx",
 	"xmlrpc",
@@ -101,7 +101,7 @@ var ExpectedExtensions = [...]string{
 	"protobuf",
 	"tideways",
 	"tideways_xhprof",
-	"ioncube"}
+	"ionCube Loader"}
 
 func TestDeployAPHPAppWithAllExtensionsIntegration(t *testing.T) {
 	RegisterTestingT(t)
@@ -146,6 +146,8 @@ func testDeployAPHPAppWithAllExtensionsIntegration(t *testing.T, when spec.G, it
 			}
 
 			output, err := app.Logs()
+
+			Expect(output).ToNot(ContainSubstring("Unable to load dynamic library"))
 
 			for _, extension := range ExpectedExtensions {
 				Expect(output).To(ContainSubstring(extension))

@@ -80,6 +80,9 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 				"openssl",
 				"mysql",
 			},
+			ZendExtensions: []string{
+				"xdebug",
+			},
 		}
 
 		err := ProcessTemplateToFile(PhpIniTemplate, filepath.Join(f.Home, "php.ini"), cfg)
@@ -89,9 +92,10 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result).To(ContainSubstring(`include_path = "/php/home/lib/php:/app/lib"`))
-		Expect(result).To(ContainSubstring(`extension_dir = "/php/home/php/lib/php/extensions/no-debug-non-zts-20180101"`))
-		Expect(result).To(ContainSubstring(`extension = openssl`))
-		Expect(result).To(ContainSubstring(`extension = mysql`))
+		Expect(result).To(ContainSubstring(`extension_dir = "/php/home/lib/php/extensions/no-debug-non-zts-20180101"`))
+		Expect(result).To(ContainSubstring(`extension = openssl.so`))
+		Expect(result).To(ContainSubstring(`extension = mysql.so`))
+		Expect(result).To(ContainSubstring(`zend_extension = xdebug.so`))
 	})
 
 	it("generates a php-fpm.conf from the template", func() {

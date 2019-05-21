@@ -753,7 +753,7 @@ user_dir =
 
 ; Directory in which the loadable extensions (modules) reside.
 ; http://php.net/extension-dir
-extension_dir = "{{.PhpHome}}/php/lib/php/extensions/no-debug-non-zts-{{.PhpAPI}}"
+extension_dir = "{{.PhpHome}}/lib/php/extensions/no-debug-non-zts-{{.PhpAPI}}"
 ; On windows:
 ; extension_dir = "ext"
 
@@ -944,7 +944,10 @@ default_socket_timeout = 60
 ;extension=xmlrpc
 ;extension=xsl
 {{ range $extension := .Extensions }}
-extension = {{ $extension }}
+extension = {{ $extension }}.so
+{{ end }}
+{{ range $zend_extension := .ZendExtensions }}
+zend_extension = {{ $zend_extension }}.so
 {{ end }}
 
 ;;;;;;;;;;;;;;;;;;;

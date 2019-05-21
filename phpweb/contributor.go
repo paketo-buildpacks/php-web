@@ -18,6 +18,7 @@ package phpweb
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -87,8 +88,8 @@ func (c Contributor) writePhpIni(layer layers.Layer) error {
 	phpIniCfg := config.PhpIniConfig{
 		AppRoot:      c.application.Root,
 		LibDirectory: c.buildpackYAML.Config.LibDirectory,
-		PhpHome:      layer.Root,
-		PhpAPI:       API(c.phpDep.Version),
+		PhpHome:      os.Getenv("PHP_HOME"),
+		PhpAPI:       os.Getenv("PHP_API"),
 	}
 	phpIniPath := filepath.Join(layer.Root, "etc", "php.ini")
 	if err := config.ProcessTemplateToFile(config.PhpIniTemplate, phpIniPath, phpIniCfg); err != nil {
@@ -120,7 +121,7 @@ func (c Contributor) writePhpFpmConf(layer layers.Layer) error {
 
 	phpFpmCfg := config.PhpFpmConfig{
 		PhpHome: layer.Root,
-		PhpAPI:  API(c.phpDep.Version),
+		PhpAPI:  os.Getenv("PHP_API"),
 		Include: userIncludePath,
 		Listen:  "127.0.0.1:9000",
 	}

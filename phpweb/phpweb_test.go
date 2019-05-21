@@ -17,6 +17,8 @@
 package phpweb
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -122,19 +124,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("we need the api string", func() {
-		it("converts from version number", func() {
-			Expect("20151012").To(Equal(API("7.0.1")))
-			Expect("20151012").To(Equal(API("7.0")))
-			Expect("20160303").To(Equal(API("7.1.25")))
-			Expect("20160303").To(Equal(API("7.1")))
-			Expect("20170718").To(Equal(API("7.2.15")))
-			Expect("20170718").To(Equal(API("7.2")))
-			Expect("20180731").To(Equal(API("7.3.1")))
-			Expect("20180731").To(Equal(API("7.3")))
-		})
-	})
-
 	when("we need a list of PHP extensions", func() {
 		var f *test.BuildFactory
 
@@ -144,11 +133,16 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 
 		it("loads the available extensions", func() {
 			layer := f.Build.Layers.Layer(php.Dependency)
+
+			// WARN: this is setting a global env variable, which might cause issues if tests are run in parallel
+			os.Setenv("PHP_EXTENSION_DIR", filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718"))
+
 			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "dba.so"), "")
 			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "curl.so"), "")
 			test.WriteFile(t, filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718", "mysqli.so"), "")
 
-			extensions, err := LoadAvailablePHPExtensions(layer.Root, "7.2")
+			extensions, err := LoadAvailablePHPExtensions()
+			fmt.Println("extensions:", extensions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(extensions)).To(Equal(3))
 		})

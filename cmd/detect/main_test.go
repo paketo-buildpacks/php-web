@@ -82,6 +82,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
+						"build": true,
 					},
 					Version: fakeVersion,
 				},
@@ -142,6 +143,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
+						"build": true,
 					},
 					Version: fakeVersion,
 				},
@@ -195,6 +197,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
+						"build": true,
 					},
 					Version: fakeVersion,
 				},
