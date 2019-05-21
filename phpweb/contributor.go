@@ -19,6 +19,7 @@ package phpweb
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -85,6 +86,14 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 }
 
 func (c Contributor) writePhpIni(layer layers.Layer) error {
+	cmd :=  exec.Command("env")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
 	phpIniCfg := config.PhpIniConfig{
 		AppRoot:      c.application.Root,
 		LibDirectory: c.buildpackYAML.Config.LibDirectory,
