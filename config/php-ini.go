@@ -944,7 +944,7 @@ default_socket_timeout = 60
 ;extension=xmlrpc
 ;extension=xsl
 {{ range $extension := .Extensions }}
-extension = {{ $extension }}
+extension = {{ $extension }}.so
 {{ end }}
 
 ;;;;;;;;;;;;;;;;;;;
