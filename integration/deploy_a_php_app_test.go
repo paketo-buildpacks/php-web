@@ -43,17 +43,18 @@ func TestDeployAPHPAppIntegration(t *testing.T) {
 
 func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 	var app *dagger.App
+	var err error
 
 	it.Before(func() {
-		var err error
-
 		RegisterTestingT(t)
-		app, err = PreparePhpApp("php_app", phpBP, httpdBP, phpWebBP)
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	when("deploying a basic PHP app", func() {
 		it("installs our hard-coded default version of PHP and does not return the version of PHP in the response headers", func() {
+			app, err = PreparePhpApp("php_app", phpBP, httpdBP, phpWebBP)
+			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
+
 			err = app.Start()
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
@@ -80,10 +81,6 @@ func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 			//By("does not display a warning message about the php version config")
 			//Expect(app.Stdout.String()).ToNot(ContainSubstring("WARNING: A version of PHP has been specified in both `composer.json` and `./bp-config/options.json`."))
 			//Expect(app.Stdout.String()).ToNot(ContainSubstring("WARNING: The version defined in `composer.json` will be used."))
-		})
-
-		it.After(func() {
-			Expect(app.Destroy()).To(Succeed()) //Only destroy app if the test passed to leave artifacts to debug
 		})
 	})
 }

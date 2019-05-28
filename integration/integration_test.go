@@ -51,9 +51,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("push simple app", func() {
 		it("servers simple php page", func() {
-
 			app, err := PreparePhpApp("simple_app", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 
 			err = app.Start()
 
@@ -72,14 +72,12 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
-
-			Expect(app.Destroy()).To(Succeed())
 		})
 
 		it("servers simple php page hosted with built-in PHP server", func() {
-
 			app, err := PreparePhpApp("simple_app_php_only", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 
 			err = app.Start()
 			if err != nil {
@@ -97,13 +95,12 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
-
-			Expect(app.Destroy()).To(Succeed())
 		})
 
 		it("runs a cli app", func() {
 			app, err := PreparePhpApp("simple_cli_app", phpBP, httpdBP, phpWebBP)
 			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 
 			app.SetHealthCheck("true", "3s", "1s")
 
@@ -124,8 +121,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			logs, err := app.Logs()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logs).To(ContainSubstring("SUCCESS"))
-
-			Expect(app.Destroy()).To(Succeed())
 		})
 	})
 }

@@ -104,7 +104,6 @@ var ExpectedExtensions = [...]string{
 	"ionCube Loader"}
 
 func TestDeployAPHPAppWithAllExtensionsIntegration(t *testing.T) {
-	RegisterTestingT(t)
 	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
 	Expect(err).NotTo(HaveOccurred())
 	defer func() {
@@ -117,19 +116,17 @@ func TestDeployAPHPAppWithAllExtensionsIntegration(t *testing.T) {
 
 func testDeployAPHPAppWithAllExtensionsIntegration(t *testing.T, when spec.G, it spec.S) {
 	var app *dagger.App
+	var err error
 
 	it.Before(func() {
-		var err error
-
 		RegisterTestingT(t)
-
-		app, err = PreparePhpApp("php_modules", phpBP, httpdBP, phpWebBP)
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	when("deploying a basic PHP app", func() {
 		it("loads key bundled extensions", func() {
-
+			app, err = PreparePhpApp("php_modules", phpBP, httpdBP, phpWebBP)
+			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
 
@@ -152,10 +149,6 @@ func testDeployAPHPAppWithAllExtensionsIntegration(t *testing.T, when spec.G, it
 			for _, extension := range ExpectedExtensions {
 				Expect(output).To(ContainSubstring(extension))
 			}
-		})
-
-		it.After(func() {
-			Expect(app.Destroy()).To(Succeed()) //Only destroy app if the test passed to leave artifacts to debug
 		})
 	})
 }
