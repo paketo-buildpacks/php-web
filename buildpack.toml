@@ -1,7 +1,7 @@
 [buildpack]
 id = "org.cloudfoundry.php-web"
 name = "PHP Web Buildpack"
-version = "0.0.3"
+version = "0.0.4"
 
 [metadata]
 default_version = "7.2.*"
