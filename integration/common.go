@@ -33,7 +33,7 @@ func PrepareBuildpack() (phpWebBp, phpBp, httpdBp string, err error) {
 func PreparePhpApp(appName string, buildpacks ...string) (*dagger.App, error) {
 	app, err := dagger.PackBuild(filepath.Join("testdata", appName), buildpacks...)
 	if err != nil {
-		return &dagger.App{}, nil
+		return &dagger.App{}, err
 	}
 
 	app.SetHealthCheck("", "3s", "1s")
