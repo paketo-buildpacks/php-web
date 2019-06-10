@@ -18,7 +18,7 @@ github.com/buildpack/libbuildpack/services
 github.com/cloudfoundry/dagger
 # github.com/cloudfoundry/httpd-cnb v0.0.2
 github.com/cloudfoundry/httpd-cnb/httpd
-# github.com/cloudfoundry/libcfbuildpack v1.61.0
+# github.com/cloudfoundry/libcfbuildpack v1.61.1-0.20190610021533-d6ea8c6856bf
 github.com/cloudfoundry/libcfbuildpack/build
 github.com/cloudfoundry/libcfbuildpack/detect
 github.com/cloudfoundry/libcfbuildpack/logger
