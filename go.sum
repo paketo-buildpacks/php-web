@@ -17,8 +17,8 @@ github.com/cloudfoundry/httpd-cnb v0.0.2/go.mod h1:dBaVY5+iyfXtyUjdrdHy10ttjwzvR
 github.com/cloudfoundry/libcfbuildpack v1.37.0/go.mod h1:WqW/cPLKqNnxhBt0JLTCQGpcKlFfC1T6vLHg0gNRtAA=
 github.com/cloudfoundry/libcfbuildpack v1.44.0/go.mod h1:C2AOm63Ca1GIBP7NdVhd8Q2gKenz600PVWqtOAbrN4o=
 github.com/cloudfoundry/libcfbuildpack v1.48.0/go.mod h1:Dq7Sg12rmsfJld22pGTvHRKHNGBfauXqgIzcPrPGbD4=
-github.com/cloudfoundry/libcfbuildpack v1.61.1-0.20190610021533-d6ea8c6856bf h1:3PWh5RKgYN8GZ95lsboG0nxEiFCOf2c7kU4qV4R9EZg=
-github.com/cloudfoundry/libcfbuildpack v1.61.1-0.20190610021533-d6ea8c6856bf/go.mod h1:4pMJZ/PYfjLg3ZzOVwzqQ17yCUErBVkDMMTJ0RCTziU=
+github.com/cloudfoundry/libcfbuildpack v1.61.1-0.20190611120830-2fcfd2a9dada h1:rDuUcRV12vAi9TyS4QxbEJOMnl9QDaxoFcjJFQnZirI=
+github.com/cloudfoundry/libcfbuildpack v1.61.1-0.20190611120830-2fcfd2a9dada/go.mod h1:4pMJZ/PYfjLg3ZzOVwzqQ17yCUErBVkDMMTJ0RCTziU=
 github.com/cloudfoundry/php-cnb v0.0.1/go.mod h1:TedI99B+atmRGenhsCa1yuwtaIIQDzXqUm4TB4cthc4=
 github.com/cloudfoundry/php-cnb v0.0.2 h1:9K+mqBT0f+yxKac0bfj/okD3H2R6dbFG269c0jiZHSU=
 github.com/cloudfoundry/php-cnb v0.0.2/go.mod h1:wmL8/TWUhD4B6ssS3Lh+JuQLCNtqFxXC78cNF7T0Zuo=
