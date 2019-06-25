@@ -19,6 +19,7 @@ package integration
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/cloudfoundry/dagger"
@@ -31,13 +32,16 @@ import (
 
 func TestDeployAPHPAppIntegration(t *testing.T) {
 	RegisterTestingT(t)
-	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
-	Expect(err).NotTo(HaveOccurred())
+
+	var err error
+	buildpacks, err = PreparePhpBps()
+	Expect(err).ToNot(HaveOccurred())
 	defer func() {
-		os.RemoveAll(phpWebBP)
-		os.RemoveAll(phpBP)
-		os.RemoveAll(httpdBP)
+		for _, buildpack := range buildpacks {
+			os.RemoveAll(buildpack)
+		}
 	}()
+
 	spec.Run(t, "Deploy A PHP App", testDeployAPHPAppIntegration, spec.Report(report.Terminal{}))
 }
 
@@ -51,7 +55,7 @@ func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying a basic PHP app", func() {
 		it("installs our hard-coded default version of PHP and does not return the version of PHP in the response headers", func() {
-			app, err = PreparePhpApp("php_app", phpBP, httpdBP, phpWebBP)
+			app, err = PreparePhpApp("php_app", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
 
@@ -76,11 +80,33 @@ func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(body).To(ContainSubstring("PHP Version"))
 			Expect(headers).ToNot(HaveKey("X-Powered-By"))
+		})
 
-			//TODO: When composer cnb exists, uncomment
-			//By("does not display a warning message about the php version config")
-			//Expect(app.Stdout.String()).ToNot(ContainSubstring("WARNING: A version of PHP has been specified in both `composer.json` and `./bp-config/options.json`."))
-			//Expect(app.Stdout.String()).ToNot(ContainSubstring("WARNING: The version defined in `composer.json` will be used."))
+		when("the app is pushed twice", func() {
+			it("does not generate php config twice", func() {
+				appName := "php_app"
+				debug := false
+				app, err := PreparePhpApp(appName, buildpacks, false)
+				Expect(err).ToNot(HaveOccurred())
+				defer app.Destroy()
+
+				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
+				Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
+
+				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), MakeBuildEnv(debug), buildpacks...)
+
+				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
+				Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
+				Expect(app.BuildLogs()).NotTo(MatchRegexp("PHP Web .*: Reusing cached layer"))
+
+				Expect(app.Start()).To(Succeed())
+
+				// ensure X-Powered-By header is removed so as not to leak information
+				body, headers, err := app.HTTPGet("/")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(body).To(ContainSubstring("PHP Version"))
+				Expect(headers).ToNot(HaveKey("X-Powered-By"))
+			})
 		})
 	})
 }

@@ -1,10 +1,6 @@
 package phpweb
 
 import (
-	"crypto/sha1"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +9,7 @@ import (
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -140,32 +136,11 @@ func GetPhpFpmConfPath(appRoot string) (string, error) {
 // If more conditions arise which affect how this buildpack generates config then we need
 // to update this Metadata to track those as well.
 type Metadata struct {
-	Name              string
-	BuildpackVersion  string
-	BuildpackYAMLHash string
-	PhpFpmUserConfig  bool
-}
-
-// NewMetadata creates new metadata with the expected name
-func NewMetadata(version string) Metadata {
-	return Metadata{
-		Name:             "PHP Web",
-		BuildpackVersion: version,
-	}
-}
-
-// UpdateHashFromFile will update Metadata.BuildpackYAMLHash with the contents at the specified path
-func (m *Metadata) UpdateHashFromFile(buildpackYAMLPath string) {
-	buf, err := ioutil.ReadFile(buildpackYAMLPath)
-	if err != nil {
-		buf = []byte("No buildpack.yml File")
-	}
-	hash := sha256.Sum256(buf)
-	m.BuildpackYAMLHash = hex.EncodeToString(hash[:])
+	Name string
+	Hash string
 }
 
 // Identity provides libcfbuildpack with information to decide if it should contribute
 func (m Metadata) Identity() (name string, version string) {
-	hash := sha1.Sum([]byte(fmt.Sprintf("%s:%s:%v", m.BuildpackVersion, m.BuildpackYAMLHash, m.PhpFpmUserConfig)))
-	return m.Name, hex.EncodeToString(hash[:])
+	return m.Name, m.Hash
 }

@@ -28,19 +28,22 @@ import (
 )
 
 var (
-	phpWebBP, phpBP, httpdBP string
-	err                      error
+	buildpacks []string
+	err        error
 )
 
 func TestIntegration(t *testing.T) {
 	RegisterTestingT(t)
-	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
-	Expect(err).NotTo(HaveOccurred())
+
+	var err error
+	buildpacks, err = PreparePhpBps()
+	Expect(err).ToNot(HaveOccurred())
 	defer func() {
-		os.RemoveAll(phpWebBP)
-		os.RemoveAll(phpBP)
-		os.RemoveAll(httpdBP)
+		for _, buildpack := range buildpacks {
+			os.RemoveAll(buildpack)
+		}
 	}()
+
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
@@ -51,7 +54,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("push simple app", func() {
 		it("servers simple php page", func() {
-			app, err := PreparePhpApp("simple_app", phpBP, httpdBP, phpWebBP)
+			app, err := PreparePhpApp("simple_app", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
 
@@ -75,7 +78,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("servers simple php page hosted with built-in PHP server", func() {
-			app, err := PreparePhpApp("simple_app_php_only", phpBP, httpdBP, phpWebBP)
+			app, err := PreparePhpApp("simple_app_php_only", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
 
@@ -98,7 +101,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("runs a cli app", func() {
-			app, err := PreparePhpApp("simple_cli_app", phpBP, httpdBP, phpWebBP)
+			app, err := PreparePhpApp("simple_cli_app", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
 

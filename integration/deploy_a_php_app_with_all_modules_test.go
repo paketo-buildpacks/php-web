@@ -104,13 +104,17 @@ var ExpectedExtensions = [...]string{
 	"ionCube Loader"}
 
 func TestDeployAPHPAppWithAllExtensionsIntegration(t *testing.T) {
-	phpWebBP, phpBP, httpdBP, err = PrepareBuildpack()
-	Expect(err).NotTo(HaveOccurred())
+	RegisterTestingT(t)
+
+	var err error
+	buildpacks, err = PreparePhpBps()
+	Expect(err).ToNot(HaveOccurred())
 	defer func() {
-		os.RemoveAll(phpWebBP)
-		os.RemoveAll(phpBP)
-		os.RemoveAll(httpdBP)
+		for _, buildpack := range buildpacks {
+			os.RemoveAll(buildpack)
+		}
 	}()
+
 	spec.Run(t, "Deploy a PHP app with all extensions", testDeployAPHPAppWithAllExtensionsIntegration, spec.Report(report.Terminal{}))
 }
 
@@ -124,7 +128,7 @@ func testDeployAPHPAppWithAllExtensionsIntegration(t *testing.T, when spec.G, it
 
 	when("deploying a basic PHP app", func() {
 		it("loads key bundled extensions", func() {
-			app, err = PreparePhpApp("php_modules", phpBP, httpdBP, phpWebBP)
+			app, err = PreparePhpApp("php_modules", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
 			app.SetHealthCheck("true", "3s", "1s")

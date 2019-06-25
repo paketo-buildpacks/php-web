@@ -17,6 +17,9 @@
 package phpweb
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -48,6 +51,12 @@ type Contributor struct {
 	metadata      Metadata
 }
 
+func generateRandomHash() [32]byte {
+	randBuf := make([]byte, 512)
+	rand.Read(randBuf)
+	return sha256.Sum256(randBuf)
+}
+
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
 func NewContributor(context build.Build) (c Contributor, willContribute bool, err error) {
 	buildpackYAML, err := LoadBuildpackYAML(context.Application.Root)
@@ -59,15 +68,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 	_, isScript := context.BuildPlan[ScriptDependency]
 	phpDep, _ := context.BuildPlan[php.Dependency]
 
-	metadata := NewMetadata(context.Buildpack.Info.Version)
-	metadata.UpdateHashFromFile(filepath.Join(context.Application.Root, "buildpack.yml"))
-
-	userIncludePath, err := GetPhpFpmConfPath(context.Application.Root)
-	if err != nil || userIncludePath == "" {
-		metadata.PhpFpmUserConfig = false
-	} else {
-		metadata.PhpFpmUserConfig = true
-	}
+	randomHash := generateRandomHash()
 
 	contributor := Contributor{
 		application:   context.Application,
@@ -78,7 +79,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		isWebApp:      isWebApp,
 		isScript:      isScript,
 		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
-		metadata:      metadata,
+		metadata:      Metadata{"PHP Web", hex.EncodeToString(randomHash[:])},
 	}
 
 	return contributor, true, nil
