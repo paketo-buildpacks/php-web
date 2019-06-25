@@ -1,3 +1,13 @@
+v0.0.5 Jun 25, 2019
+====================
+
+* update web layers to always contribute,
+  - this is a <10MB contribution so should not have much performance impact
+  - always write start command (so we can re-build the same image)
+  - add tests for pushing twice
+  (https://www.pivotaltracker.com/story/show/162492533)
+
+
 v0.0.4 May 28, 2019
 ====================
 
