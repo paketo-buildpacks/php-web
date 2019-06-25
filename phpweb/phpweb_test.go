@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/cloudfoundry/php-cnb/php"
 
@@ -145,59 +144,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			fmt.Println("extensions:", extensions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(extensions)).To(Equal(3))
-		})
-	})
-
-	when("we have metadata", func() {
-		var f *test.BuildFactory
-
-		it.Before(func() {
-			f = test.NewBuildFactory(t)
-		})
-
-		it("has a name & version", func() {
-			md := NewMetadata("1.0")
-
-			Expect(md.Name).To(Equal("PHP Web"))
-			Expect(md.BuildpackVersion).To(Equal("1.0"))
-			Expect(md.PhpFpmUserConfig).To(BeFalse())
-		})
-
-		it("has a hash", func() {
-			buildpackYAMLPath := filepath.Join(f.Build.Application.Root, "buildpack.yml")
-			test.WriteFile(t, buildpackYAMLPath, "Hello World!")
-
-			md := NewMetadata("1.0")
-			md.UpdateHashFromFile(buildpackYAMLPath)
-
-			Expect(md.BuildpackYAMLHash).To(Equal("7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"))
-		})
-
-		it("has a hash of `No buildpack.yml File` when buildpack.yml doesn't exist", func() {
-			md := NewMetadata("1.0")
-			md.UpdateHashFromFile(filepath.Join(f.Build.Application.Root, "buildpack.yml"))
-
-			firstHash := md.BuildpackYAMLHash
-
-			time.Sleep(10 * time.Millisecond)
-
-			md.UpdateHashFromFile(filepath.Join(f.Build.Application.Root, "buildpack.yml"))
-
-			Expect(firstHash).To(Equal(md.BuildpackYAMLHash))
-		})
-
-		it("generates an identity", func() {
-			buildpackYAMLPath := filepath.Join(f.Build.Application.Root, "buildpack.yml")
-			test.WriteFile(t, buildpackYAMLPath, "Hello World!")
-
-			md := NewMetadata("1.0")
-			md.UpdateHashFromFile(buildpackYAMLPath)
-			md.PhpFpmUserConfig = true
-
-			name, version := md.Identity()
-
-			Expect(name).To(Equal("PHP Web"))
-			Expect(version).To(Equal("729055944455e83c1d148e6ec8609e161281f9fc"))
 		})
 	})
 

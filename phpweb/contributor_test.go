@@ -264,8 +264,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(err).To(Not(HaveOccurred()))
 
 		Expect(c.metadata.Name).To(Equal("PHP Web"))
-		Expect(c.metadata.BuildpackVersion).To(Equal("1.0"))
-		Expect(c.metadata.BuildpackYAMLHash).To(Equal("2c88cb132cbef68d6610c82941f171f325cab2d31a024c121b822c4875d50996"))
-		Expect(c.metadata.PhpFpmUserConfig).To(BeTrue())
+		Expect(len(c.metadata.Hash)).To(Equal(64))
+
 	})
 }

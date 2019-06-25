@@ -254,7 +254,6 @@ func (c Contributor) Contribute() error {
 		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
 	}
 
-
 	if c.isScript {
 		c.logger.FirstLine("Configuring PHP Script")
 
