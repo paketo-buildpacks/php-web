@@ -38,7 +38,7 @@ func TestDeployAPHPAppIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 	defer func() {
 		for _, buildpack := range buildpacks {
-			os.RemoveAll(buildpack)
+			dagger.DeleteBuildpack(buildpack)
 		}
 	}()
 
@@ -73,7 +73,7 @@ func testDeployAPHPAppIntegration(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			// ensure correct version of PHP is installed
-			Expect(app.BuildLogs()).To(MatchRegexp(`----->.*PHP.*7\.2\.\d+.*Contributing.* to layer`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`PHP.*7\.2\.\d+.*Contributing.* to layer`))
 
 			// ensure X-Powered-By header is removed so as not to leak information
 			body, headers, err := app.HTTPGet("/")
