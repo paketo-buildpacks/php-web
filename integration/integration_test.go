@@ -21,6 +21,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cloudfoundry/dagger"
+
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
@@ -40,7 +42,7 @@ func TestIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 	defer func() {
 		for _, buildpack := range buildpacks {
-			os.RemoveAll(buildpack)
+			dagger.DeleteBuildpack(buildpack)
 		}
 	}()
 

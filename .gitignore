@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 .bin
-bin
+/bin
 *.tgz
 php-web-cnb_*
+/buildpack.toml
