@@ -41,6 +41,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 	it("generates an httpd.conf from the template", func() {
 		cfg := HttpdConfig{
+			AppRoot:      "/app",
 			ServerAdmin:  "test@example.org",
 			WebDirectory: "htdocs",
 			FpmSocket:    "127.0.0.1:9000",
@@ -54,20 +55,37 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result).To(ContainSubstring(`ServerRoot "${SERVER_ROOT}"`))
 		Expect(result).To(ContainSubstring(`ServerAdmin "test@example.org"`))
-		Expect(result).To(ContainSubstring(`DocumentRoot "${APP_ROOT}/htdocs"`))
-		Expect(result).To(ContainSubstring(`<Directory "${APP_ROOT}/htdocs">`))
+		Expect(result).To(ContainSubstring(`DocumentRoot "/app/htdocs"`))
+		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
 		Expect(result).To(ContainSubstring(`<Files ".ht*">`))
 		Expect(result).To(ContainSubstring(`ErrorLog "/proc/self/fd/2"`))
 		Expect(result).To(ContainSubstring(`CustomLog "/proc/self/fd/1" extended`))
 		Expect(result).To(ContainSubstring(`RemoteIpHeader x-forwarded-for`))
 		Expect(result).To(ContainSubstring(`RemoteIpInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16`))
 		Expect(result).To(ContainSubstring(`SetEnvIf x-forwarded-proto https HTTPS=on`))
-		Expect(result).To(ContainSubstring(`Define fcgi-listener fcgi://127.0.0.1:9000${APP_ROOT}/htdocs`))
+		Expect(result).To(ContainSubstring(`Define fcgi-listener fcgi://127.0.0.1:9000/app/htdocs`))
 		Expect(result).To(ContainSubstring(`<Proxy "${fcgi-listener}">`))
 		Expect(result).To(ContainSubstring(`ProxySet disablereuse=On retry=0`))
-		Expect(result).To(ContainSubstring(`<Directory "${APP_ROOT}/htdocs">`))
+		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
 		Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
 		Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
+	})
+
+	it("generates an nginx.conf from the template", func() {
+		cfg := NginxConfig{
+			AppRoot:      "/app",
+			WebDirectory: "public",
+			FpmSocket:    "/tmp/php-fpm.socket",
+		}
+
+		err := ProcessTemplateToFile(NginxConfTemplate, filepath.Join(f.Home, "nginx.conf"), cfg)
+		Expect(err).ToNot(HaveOccurred())
+
+		result, err := ioutil.ReadFile(filepath.Join(f.Home, "nginx.conf"))
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result).To(ContainSubstring(`root               /app/public;`))
+		Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
+		Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
 	})
 
 	it("generates a php.ini from the template", func() {

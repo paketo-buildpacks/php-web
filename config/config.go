@@ -43,6 +43,14 @@ func ProcessTemplateToFile(templateBody string, outputPath string, data interfac
 // HttpdConfig supplies values for templated httpd.conf
 type HttpdConfig struct {
 	ServerAdmin  string
+	AppRoot      string
+	WebDirectory string
+	FpmSocket    string
+}
+
+// NginxConfig supplies values for templated nginx.conf
+type NginxConfig struct {
+	AppRoot      string
 	WebDirectory string
 	FpmSocket    string
 }

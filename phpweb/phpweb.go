@@ -124,17 +124,6 @@ func GetPhpFpmConfPath(appRoot string) (string, error) {
 	return userIncludePath, nil
 }
 
-// Metadata that used to determine if the buildpack will contribute updated configs
-//
-// We want to generate new configuration if the following happens:
-//   - The buildpack version changes, cause our base config files might change
-//   - The user's buildpack.yml file changes, cause values from this file are passed into the config
-//   - If the user has custom PHP FPM. When there is/isn't custom PHP-FPM config, this changes the
-//     config files that are generated (because PHP-FPM freaks out if you Include config, but
-//     the included path doesn't exist or have any actual config files)
-//
-// If more conditions arise which affect how this buildpack generates config then we need
-// to update this Metadata to track those as well.
 type Metadata struct {
 	Name string
 	Hash string

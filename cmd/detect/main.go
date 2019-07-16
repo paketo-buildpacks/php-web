@@ -106,7 +106,7 @@ func runDetect(context detect.Detect) (int, error) {
 
 	plan, phpFound := context.BuildPlan[php.Dependency]
 	if !phpFound {
-		context.Logger.SubsequentLine("PHP not listed in build plan, and is required")
+		context.Logger.Body("PHP not listed in build plan, and is required")
 		return context.Fail(), nil
 	}
 	version := phpweb.Version(buildpackYAML, context.Buildpack, plan)
@@ -122,9 +122,9 @@ func runDetect(context detect.Detect) (int, error) {
 			php.Dependency: buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					"launch": true,
-					"build": true,
+					"build":  true,
 				},
-				Version:  version,
+				Version: version,
 			},
 			phpweb.WebDependency: buildplan.Dependency{},
 			pickWebServer(buildpackYAML): buildplan.Dependency{
@@ -145,9 +145,9 @@ func runDetect(context detect.Detect) (int, error) {
 			php.Dependency: buildplan.Dependency{
 				Metadata: buildplan.Metadata{
 					"launch": true,
-					"build": true,
+					"build":  true,
 				},
-				Version:  version,
+				Version: version,
 			},
 			phpweb.ScriptDependency: buildplan.Dependency{},
 		})
