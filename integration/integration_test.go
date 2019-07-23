@@ -57,7 +57,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 	})
 
-	when("push simple app", func() {
+	when("deploying the simple_app fixture", func() {
 		it("serves a simple php page with httpd", func() {
 			app, err := PushSimpleApp("simple_app", buildpacks, false)
 			Expect(err).NotTo(HaveOccurred())
@@ -110,8 +110,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("deploying a basic PHP app with all extensions", func() {
-		it("loads key bundled extensions", func() {
+	when("deploying a basic PHP app with extensions", func() {
+		it("loads list of expected extensions", func() {
 			app, err = PreparePhpApp("php_modules", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
@@ -140,8 +140,33 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("deploying a basic PHP app", func() {
-		it("installs our hard-coded default version of PHP and does not return the version of PHP in the response headers", func() {
+	when("deploying the php_app fixture", func() {
+		it("does not return the version of PHP in the response headers", func() {
+			app, err = PreparePhpApp("php_app", buildpacks, false)
+			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
+
+			err = app.Start()
+			if err != nil {
+				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
+				containerID, imageName, volumeIDs, err := app.Info()
+				Expect(err).NotTo(HaveOccurred())
+				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
+
+				containerLogs, err := app.Logs()
+				Expect(err).NotTo(HaveOccurred())
+				fmt.Printf("Container Logs:\n %s\n", containerLogs)
+				t.FailNow()
+			}
+
+			// ensure X-Powered-By header is removed so as not to leak information
+			body, headers, err := app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(body).To(ContainSubstring("PHP Version"))
+			Expect(headers).ToNot(HaveKey("X-Powered-By"))
+		})
+
+		it("installs our hard-coded default version of PHP", func() {
 			app, err = PreparePhpApp("php_app", buildpacks, false)
 			Expect(err).ToNot(HaveOccurred())
 			defer app.Destroy()
@@ -161,16 +186,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			// ensure correct version of PHP is installed
 			Expect(app.BuildLogs()).To(MatchRegexp(`PHP.*7\.2\.\d+.*Contributing.* to layer`))
-
-			// ensure X-Powered-By header is removed so as not to leak information
-			body, headers, err := app.HTTPGet("/")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(body).To(ContainSubstring("PHP Version"))
-			Expect(headers).ToNot(HaveKey("X-Powered-By"))
 		})
 
 		when("the app is pushed twice", func() {
-			it("does not generate php config twice", func() {
+			it("does generate php config twice", func() {
 				appName := "php_app"
 				debug := false
 				app, err := PreparePhpApp(appName, buildpacks, false)
@@ -187,18 +206,14 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 				Expect(app.BuildLogs()).NotTo(MatchRegexp("PHP Web .*: Reusing cached layer"))
 
 				Expect(app.Start()).To(Succeed())
-
-				// ensure X-Powered-By header is removed so as not to leak information
-				body, headers, err := app.HTTPGet("/")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(body).To(ContainSubstring("PHP Version"))
-				Expect(headers).ToNot(HaveKey("X-Powered-By"))
 			})
 		})
 	})
 
 }
 
+// NOTE: as extensions are added to the php-cnb binaries, we need to update this list
+//   and also integration/testdata/php_modules/.php.ini.d/snippet.ini
 var ExpectedExtensions = [...]string{
 	"bz2",
 	"curl",
@@ -271,4 +286,5 @@ var ExpectedExtensions = [...]string{
 	"protobuf",
 	"tideways",
 	"tideways_xhprof",
-	"ionCube Loader"}
+	"ionCube Loader",
+}
