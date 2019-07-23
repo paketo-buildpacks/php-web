@@ -110,7 +110,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		return err
 	}
 
-	c.logger.Body("Using web directory: %s", c.buildpackYAML.Config.WebServer)
+	c.logger.Body("Requested web server: %s", c.buildpackYAML.Config.WebServer)
 
 	webServerName := strings.ToLower(c.buildpackYAML.Config.WebServer)
 	if webServerName == PhpWebServer {
@@ -134,7 +134,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 
 		return c.contributeWebServer(layer, webServerName, process)
 	} else if webServerName == Nginx {
-		c.logger.Body("Using Nginx")
+		c.logger.Body("Using Nginx Web Server")
 
 		process := procmgr.Proc{
 			Command: "nginx",

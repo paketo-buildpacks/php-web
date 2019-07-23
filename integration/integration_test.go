@@ -63,6 +63,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			defer app.Destroy()
 
+			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
+			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
+
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
@@ -73,6 +77,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			defer app.Destroy()
 
+			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: php-server"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using PHP built-in server"))
+
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
@@ -82,6 +89,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err := PushSimpleApp("simple_app_nginx", buildpacks, false)
 			Expect(err).NotTo(HaveOccurred())
 			defer app.Destroy()
+
+			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
+			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
