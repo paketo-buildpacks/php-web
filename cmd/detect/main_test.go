@@ -82,7 +82,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
-						"build": true,
+						"build":  true,
 					},
 					Version: fakeVersion,
 				},
@@ -109,7 +109,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
-						"build": true,
+						"build":  true,
 					},
 					Version: fakeVersion,
 				},
@@ -143,7 +143,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
-						"build": true,
+						"build":  true,
 					},
 					Version: fakeVersion,
 				},
@@ -197,7 +197,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 				"php-binary": buildplan.Dependency{
 					Metadata: buildplan.Metadata{
 						"launch": true,
-						"build": true,
+						"build":  true,
 					},
 					Version: fakeVersion,
 				},
@@ -208,6 +208,16 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("fails when there's no PHP files", func() {
 			Expect(runDetect(factory.Detect)).To(Equal(detect.FailStatusCode))
 			Expect(factory.Output).To(BeNil())
+		})
+	})
+
+	when("there is neither", func() {
+		it("should fail", func() {
+			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
+			fakeVersion := "php.default.version"
+			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
+
+			Expect(runDetect(factory.Detect)).To(Equal(detect.FailStatusCode))
 		})
 	})
 }

@@ -101,7 +101,7 @@ func (c Contributor) Contribute() error {
 		return l.Contribute(c.metadata, c.contributeScript, c.flags()...)
 	}
 
-	c.logger.Info("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")
+	c.logger.BodyWarning("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")
 	return nil
 }
 
@@ -144,6 +144,7 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 		return c.contributeWebServer(layer, webServerName, process)
 	}
 
+	c.logger.BodyWarning("WARNING: Did not install requested web server: %s. Requested server is unavailable. Start command is not being provided.", webServerName)
 	return nil
 }
 

@@ -17,8 +17,9 @@
 package main
 
 import (
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
 	"testing"
+
+	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -44,6 +45,18 @@ func testProcmgr(t *testing.T, _ spec.G, it spec.S) {
 			},
 		})
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	it("should fail when running a proc that doesn't exist", func() {
+		err := runProcs(procmgr.Procs{
+			Processes: map[string]procmgr.Proc{
+				"proc1": {
+					Command: "idontexist",
+					Args:    []string{},
+				},
+			},
+		})
+		Expect(err).To(HaveOccurred())
 	})
 
 	it("should run two procs", func() {
