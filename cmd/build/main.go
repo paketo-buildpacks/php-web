@@ -42,7 +42,7 @@ func main() {
 }
 
 func runBuild(context build.Build) (int, error) {
-	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
+	context.Logger.Title(context.Buildpack)
 
 	phpweb, willContribute, err := phpweb.NewContributor(context)
 	if err != nil {
