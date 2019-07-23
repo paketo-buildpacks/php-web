@@ -99,12 +99,13 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					WebDirectory: "htdocs",
 					LibDirectory: "lib",
 					Script:       "app.php",
+					ServerAdmin:  "admin@localhost",
 				},
 			}))
 		})
 
 		it("can load a version & web server", func() {
-			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd'}}"
+			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com'}}"
 			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
 
 			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
@@ -115,6 +116,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					WebDirectory: "htdocs",
 					LibDirectory: "lib",
 					Script:       "app.php",
+					ServerAdmin:  "admin@example.com",
 				},
 			}
 

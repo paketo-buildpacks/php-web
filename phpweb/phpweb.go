@@ -9,7 +9,7 @@ import (
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -63,6 +63,7 @@ type Config struct {
 	WebDirectory string `yaml:"webdirectory"`
 	LibDirectory string `yaml:"libdirectory"`
 	Script       string `yaml:"script"`
+	ServerAdmin  string `yaml:"serveradmin"`
 }
 
 // LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
@@ -73,6 +74,7 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML.Config.WebDirectory = "htdocs"
 	buildpackYAML.Config.WebServer = ApacheHttpd
 	buildpackYAML.Config.Script = "app.php"
+	buildpackYAML.Config.ServerAdmin = "admin@localhost"
 
 	if exists, err := helper.FileExists(configFile); err != nil {
 		return BuildpackYAML{}, err

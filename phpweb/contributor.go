@@ -213,7 +213,7 @@ func (c Contributor) writeServerConf(layer layers.Layer, name string) error {
 
 	if name == ApacheHttpd {
 		cfg = config.HttpdConfig{
-			ServerAdmin:  "admin@localhost", //TODO: pull from httpd.BuildpackYAML
+			ServerAdmin:  c.buildpackYAML.Config.ServerAdmin,
 			AppRoot:      c.application.Root,
 			WebDirectory: c.buildpackYAML.Config.WebDirectory,
 			FpmSocket:    "127.0.0.1:9000",
