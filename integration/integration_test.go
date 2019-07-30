@@ -212,7 +212,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 }
 
-// NOTE: as extensions are added to the php-cnb binaries, we need to update this list
+// NOTE: as extensions are added to the php-dist-cnb binaries, we need to update this list
 //   and also integration/testdata/php_modules/.php.ini.d/snippet.ini
 var ExpectedExtensions = [...]string{
 	"bz2",

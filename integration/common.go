@@ -15,7 +15,7 @@ func PreparePhpBps() ([]string, error) {
 		return []string{}, err
 	}
 
-	phpBp, err := dagger.GetLatestBuildpack("php-cnb")
+	phpDistBp, err := dagger.GetLatestBuildpack("php-dist-cnb")
 	if err != nil {
 		return []string{}, err
 	}
@@ -35,7 +35,7 @@ func PreparePhpBps() ([]string, error) {
 		return []string{}, err
 	}
 
-	return []string{phpBp, httpdBp, nginxBp, phpWebBp}, nil
+	return []string{phpDistBp, httpdBp, nginxBp, phpWebBp}, nil
 }
 
 // MakeBuildEnv creates a build environment map

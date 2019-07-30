@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/httpd-cnb/httpd"
-	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"

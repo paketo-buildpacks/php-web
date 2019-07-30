@@ -35,7 +35,7 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
-	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 )
 
 // Contributor represents a PHP contribution by the buildpack

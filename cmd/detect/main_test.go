@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry/httpd-cnb/httpd"
-	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 	"github.com/cloudfoundry/php-web-cnb/phpweb"
 
 	"github.com/buildpack/libbuildpack/buildplan"
