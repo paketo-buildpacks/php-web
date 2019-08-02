@@ -4,4 +4,3 @@
 /bin
 *.tgz
 php-web-cnb_*
-/buildpack.toml
