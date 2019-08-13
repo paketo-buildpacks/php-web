@@ -280,15 +280,23 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		it("starts a script using default `app.php`", func() {
 			c.isScript = true
 
-			Expect(c.Contribute()).To(Succeed())
+			for _, script := range DefaultCliScripts {
+				scriptName := filepath.Join(f.Build.Application.Root, script)
+				err := helper.WriteFile(scriptName, 0655, "")
+				Expect(err).ToNot(HaveOccurred())
 
-			command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "app.php")
-			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{"task", command},
-					{"web", command},
-				},
-			}))
+				Expect(c.contributeScript(f.Build.Layers.Layer(fmt.Sprintf("layer-%s", script)))).To(Succeed())
+
+				command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, script)
+				Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+					Processes: []layers.Process{
+						{"task", command},
+						{"web", command},
+					},
+				}))
+
+				os.Remove(scriptName)
+			}
 		})
 
 		it("starts a script using custom script path/name", func() {
@@ -312,10 +320,9 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			c.logger = logger.Logger{Logger: bplogger.NewLogger(debug, info)}
 			c.isScript = true
-			c.buildpackYAML.Config.Script = "does/not/exist.php"
 
 			Expect(c.Contribute()).To(Succeed())
-			Expect(info.String()).To(ContainSubstring("WARNING: `does/not/exist.php` start script not found. App will not start unless you specify a custom start command."))
+			Expect(info.String()).To(ContainSubstring("Buildpack could not find a file to execute. Either set php.script in buildpack.yml or include one of these files [app.php, main.php, run.php, start.php]"))
 		})
 	})
 
