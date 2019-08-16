@@ -8,34 +8,45 @@ import (
 	"github.com/cloudfoundry/dagger"
 )
 
+var (
+	phpDistURI, httpdURI, nginxURI, phpWebURI string
+)
+
 // PreparePhpBps builds the current buildpacks
-func PreparePhpBps() ([]string, error) {
+func PreparePhpBps() error {
 	bpRoot, err := dagger.FindBPRoot()
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	phpDistBp, err := dagger.GetLatestBuildpack("php-dist-cnb")
+	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	httpdBp, err := dagger.GetLatestBuildpack("httpd-cnb")
+	httpdURI, err = dagger.GetLatestBuildpack("httpd-cnb")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	nginxBp, err := dagger.GetLatestBuildpack("nginx-cnb")
+	nginxURI, err = dagger.GetLatestBuildpack("nginx-cnb")
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	phpWebBp, err := dagger.PackageBuildpack(bpRoot)
+	phpWebURI, err = dagger.PackageBuildpack(bpRoot)
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	return []string{phpDistBp, httpdBp, nginxBp, phpWebBp}, nil
+	return nil
+}
+
+// CleanUpBps removes the packaged buildpacks
+func CleanUpBps() {
+	for _, bp := range []string{phpDistURI, httpdURI, nginxURI, phpWebURI} {
+		dagger.DeleteBuildpack(bp)
+	}
 }
 
 // MakeBuildEnv creates a build environment map

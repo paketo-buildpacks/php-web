@@ -25,7 +25,6 @@ import (
 	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	bp "github.com/buildpack/libbuildpack/buildpack"
-	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -44,37 +43,16 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("a version is set", func() {
-		it("uses php.version from buildpack.yml, if set", func() {
-			buildpack := buildpack.NewBuildpack(bp.Buildpack{}, logger.Logger{})
-			dependency := buildplan.Dependency{}
-			buildpackYAML := BuildpackYAML{
-				Config: Config{
-					Version: "test-version",
-				},
-			}
-
-			Expect(Version(buildpackYAML, buildpack, dependency)).To(Equal("test-version"))
-		})
-
-		it("uses build plan version, if set", func() {
-			buildpack := buildpack.NewBuildpack(bp.Buildpack{}, logger.Logger{})
-			dependency := buildplan.Dependency{Version: "test-version"}
-
-			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal("test-version"))
-		})
-
 		it("uses buildpack default version if set", func() {
 			buildpack := buildpack.NewBuildpack(bp.Buildpack{Metadata: buildpack.Metadata{"default_version": "test-version"}}, logger.Logger{})
-			dependency := buildplan.Dependency{}
 
-			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal("test-version"))
+			Expect(Version(buildpack)).To(Equal("test-version"))
 		})
 
 		it("return `*` if none set", func() {
 			buildpack := buildpack.NewBuildpack(bp.Buildpack{}, logger.Logger{})
-			dependency := buildplan.Dependency{}
 
-			Expect(Version(BuildpackYAML{}, buildpack, dependency)).To(Equal("*"))
+			Expect(Version(buildpack)).To(Equal("*"))
 		})
 
 	})

@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
 	"github.com/cloudfoundry/httpd-cnb/httpd"
 	"github.com/cloudfoundry/php-dist-cnb/php"
 	"github.com/cloudfoundry/php-web-cnb/phpweb"
@@ -74,50 +76,50 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it("sets the proper buildplan items", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
 			fakeVersion := "php.default.version"
 			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				"php-binary": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-						"build":  true,
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:    php.Dependency,
+						Version: fakeVersion,
+						Metadata: buildplan.Metadata{"launch": true, "build": true,
+							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					Version: fakeVersion,
+					{Name: phpweb.WebDependency},
+					{
+						Name:     "httpd",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
 				},
-				"php-web": buildplan.Dependency{},
-				"httpd": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-					},
+				Provides: []buildplan.Provided{
+					{Name: phpweb.WebDependency},
 				},
 			}))
 		})
 
 		it("passes through Metadata.build", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"build": true,
-				},
-			})
 			fakeVersion := "php.default.version"
 			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				"php-binary": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-						"build":  true,
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:    php.Dependency,
+						Version: fakeVersion,
+						Metadata: buildplan.Metadata{"launch": true, "build": true,
+							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					Version: fakeVersion,
+					{Name: phpweb.WebDependency},
+					{
+						Name:     "httpd",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
 				},
-				"php-web": buildplan.Dependency{},
-				"httpd": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-					},
+				Provides: []buildplan.Provided{
+					{Name: phpweb.WebDependency},
 				},
 			}))
 		})
@@ -133,33 +135,29 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it("adjusts the buildplan webServer if non-default put in BuildpackYAML", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
 			fakeVersion := "php.default.version"
 			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), `{"php": {"webserver": "nginx"}}`)
 
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				"php-binary": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-						"build":  true,
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:    php.Dependency,
+						Version: fakeVersion,
+						Metadata: buildplan.Metadata{"launch": true, "build": true,
+							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					Version: fakeVersion,
+					{Name: phpweb.WebDependency},
+					{
+						Name:     "nginx",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
 				},
-				"php-web": buildplan.Dependency{},
-				"nginx": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-					},
+				Provides: []buildplan.Provided{
+					{Name: phpweb.WebDependency},
 				},
 			}))
-		})
-
-		it("fails if php-binary is not in the buildplan", func() {
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-
-			Expect(runDetect(factory.Detect)).To(Equal(detect.FailStatusCode))
 		})
 	})
 
@@ -188,32 +186,35 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 		it("sets the proper buildplan items", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "app.php"), "")
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
 			fakeVersion := "php.default.version"
 			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 
 			Expect(runDetect(factory.Detect)).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				"php-binary": buildplan.Dependency{
-					Metadata: buildplan.Metadata{
-						"launch": true,
-						"build":  true,
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:    php.Dependency,
+						Version: fakeVersion,
+						Metadata: buildplan.Metadata{"launch": true, "build": true,
+							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					Version: fakeVersion,
+					{Name: phpweb.ScriptDependency},
 				},
-				"php-script": buildplan.Dependency{},
+				Provides: []buildplan.Provided{
+					{Name: phpweb.ScriptDependency},
+				},
 			}))
 		})
 
 		it("fails when there's no PHP files", func() {
 			Expect(runDetect(factory.Detect)).To(Equal(detect.FailStatusCode))
-			Expect(factory.Output).To(BeNil())
+			Expect(factory.Plans.Plan.Requires).To(BeNil())
+			Expect(factory.Plans.Plan.Provides).To(BeNil())
 		})
 	})
 
 	when("there is neither", func() {
 		it("should fail", func() {
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
 			fakeVersion := "php.default.version"
 			factory.Detect.Buildpack.Metadata = map[string]interface{}{"default_version": fakeVersion}
 

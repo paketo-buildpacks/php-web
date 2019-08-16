@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
 	"github.com/cloudfoundry/httpd-cnb/httpd"
 	"github.com/cloudfoundry/php-dist-cnb/php"
 
@@ -35,11 +37,6 @@ func main() {
 	detectionContext, err := detect.DefaultDetect()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to run detection: %s", err)
-		os.Exit(101)
-	}
-
-	if err := detectionContext.BuildPlan.Init(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize Build Plan: %s\n", err)
 		os.Exit(101)
 	}
 
@@ -104,56 +101,77 @@ func runDetect(context detect.Detect) (int, error) {
 		return context.Fail(), err
 	}
 
-	plan, phpFound := context.BuildPlan[php.Dependency]
-	if !phpFound {
-		context.Logger.Body("PHP not listed in build plan, and is required")
+	webDir := pickWebDir(buildpackYAML)
+	version := phpweb.Version(context.Buildpack)
+	isWebApp, err := searchForWebApp(context.Application.Root, webDir)
+	if err != nil {
+		return context.Fail(), err
+	}
+
+	isScriptApp, err := searchForScript(context.Application.Root, context.Logger)
+	if err != nil {
+		return context.Fail(), err
+	}
+
+	if !(isWebApp || isScriptApp) {
 		return context.Fail(), nil
 	}
-	version := phpweb.Version(buildpackYAML, context.Buildpack, plan)
-	webDir := pickWebDir(buildpackYAML)
 
-	webAppFound, err := searchForWebApp(context.Application.Root, webDir)
-	if err != nil {
-		return context.Fail(), err
-	}
-
-	if webAppFound {
-		return context.Pass(buildplan.BuildPlan{
-			php.Dependency: buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"launch": true,
-					"build":  true,
+	var plan buildplan.Plan
+	if isWebApp {
+		webServer := pickWebServer(buildpackYAML)
+		plan = buildplan.Plan{
+			Requires: []buildplan.Required{
+				requiredPHP(version),
+				{
+					Name: phpweb.WebDependency,
 				},
-				Version: version,
-			},
-			phpweb.WebDependency: buildplan.Dependency{},
-			pickWebServer(buildpackYAML): buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"launch": true,
+				{
+					Name:     webServer,
+					Metadata: buildplan.Metadata{"launch": true},
 				},
 			},
-		})
-	}
-
-	scriptFound, err := searchForScript(context.Application.Root, context.Logger)
-	if err != nil {
-		return context.Fail(), err
-	}
-
-	if scriptFound {
-		return context.Pass(buildplan.BuildPlan{
-			php.Dependency: buildplan.Dependency{
-				Metadata: buildplan.Metadata{
-					"launch": true,
-					"build":  true,
+			Provides: []buildplan.Provided{
+				{
+					Name: phpweb.WebDependency,
 				},
-				Version: version,
 			},
-			phpweb.ScriptDependency: buildplan.Dependency{},
-		})
+		}
+
+		if webServer == phpweb.PhpWebServer {
+			plan.Provides = append(plan.Provides, buildplan.Provided{
+				Name: phpweb.PhpWebServer,
+			})
+		}
+	} else if isScriptApp {
+		plan = buildplan.Plan{
+			Requires: []buildplan.Required{
+				requiredPHP(version),
+				{
+					Name: phpweb.ScriptDependency,
+				},
+			},
+			Provides: []buildplan.Provided{
+				{
+					Name: phpweb.ScriptDependency,
+				},
+			},
+		}
 	}
 
-	return context.Fail(), nil
+	return context.Pass(plan)
+}
+
+func requiredPHP(version string) buildplan.Required {
+	return buildplan.Required{
+		Name:    php.Dependency,
+		Version: version,
+		Metadata: buildplan.Metadata{
+			"launch":                    true,
+			"build":                     true,
+			buildpackplan.VersionSource: php.DefaultVersionsSource,
+		},
+	}
 }
 
 func pickWebServer(bpYaml phpweb.BuildpackYAML) string {

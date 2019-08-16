@@ -36,9 +36,9 @@ type Contributor struct {
 
 // NewContributor will create a new Contributor object
 func NewContributor(context build.Build) (c Contributor, willContribute bool, err error) {
-	plan, wantDependency := context.BuildPlan[Dependency]
-	if !wantDependency {
-		return Contributor{}, false, nil
+	plan, wantDependency, err := context.Plans.GetShallowMerged(Dependency)
+	if err != nil || !wantDependency {
+		return Contributor{}, false, err
 	}
 
 	deps, err := context.Buildpack.Dependencies()
@@ -57,10 +57,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		httpdLayer:  context.Layers.DependencyLayer(dep),
 	}
 
-	if _, ok := plan.Metadata["launch"]; ok {
-		contributor.launchContribution = true
-	}
-
+	contributor.launchContribution, _ = plan.Metadata["launch"].(bool)
 	return contributor, true, nil
 }
 

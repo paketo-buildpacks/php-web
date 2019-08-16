@@ -31,39 +31,44 @@ import (
 )
 
 var (
-	app        *dagger.App
-	buildpacks []string
-	err        error
+	app *dagger.App
+	err error
 )
 
 func TestIntegration(t *testing.T) {
 	RegisterTestingT(t)
 
 	var err error
-	buildpacks, err = PreparePhpBps()
+	err = PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
-	defer func() {
-		for _, buildpack := range buildpacks {
-			dagger.DeleteBuildpack(buildpack)
-		}
-	}()
-
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
+	CleanUpBps()
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
-	var Expect func(interface{}, ...interface{}) Assertion
+	var (
+		Expect func(interface{}, ...interface{}) Assertion
+		app    *dagger.App
+		err    error
+	)
+
 	it.Before(func() {
 		Expect = NewWithT(t).Expect
 	})
 
+	it.After(func() {
+		if app != nil {
+			app.Destroy()
+		}
+	})
+
 	when("deploying the simple_app fixture", func() {
 		it("serves a simple php page with httpd", func() {
-			app, err := PushSimpleApp("simple_app", buildpacks, false)
+			app, err = PushSimpleApp("simple_app", []string{phpDistURI, httpdURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
-			defer app.Destroy()
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
 			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
 
@@ -73,9 +78,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("serves a simple php page hosted with built-in PHP server", func() {
-			app, err := PushSimpleApp("simple_app_php_only", buildpacks, false)
+			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
-			defer app.Destroy()
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: php-server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("Using PHP built-in server"))
@@ -86,11 +90,11 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("serves a simple php page with nginx", func() {
-			app, err := PushSimpleApp("simple_app_nginx", buildpacks, false)
+			app, err = PushSimpleApp("simple_app_nginx", []string{phpDistURI, nginxURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
-			defer app.Destroy()
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
 			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
@@ -100,9 +104,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("runs a cli app", func() {
-			app, err := PushSimpleApp("simple_cli_app", buildpacks, true)
+			app, err = PushSimpleApp("simple_cli_app", []string{phpDistURI, phpWebURI}, true)
 			Expect(err).NotTo(HaveOccurred())
-			defer app.Destroy()
 
 			logs, err := app.Logs()
 			Expect(err).ToNot(HaveOccurred())
@@ -112,9 +115,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying a basic PHP app with extensions", func() {
 		it("loads list of expected extensions", func() {
-			app, err = PreparePhpApp("php_modules", buildpacks, false)
+			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
 
@@ -142,9 +144,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying the php_app fixture", func() {
 		it("does not return the version of PHP in the response headers", func() {
-			app, err = PreparePhpApp("php_app", buildpacks, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
 
 			err = app.Start()
 			if err != nil {
@@ -167,9 +168,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("installs our hard-coded default version of PHP", func() {
-			app, err = PreparePhpApp("php_app", buildpacks, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
 
 			err = app.Start()
 			if err != nil {
@@ -192,24 +192,20 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			it("does generate php config twice", func() {
 				appName := "php_app"
 				debug := false
-				app, err := PreparePhpApp(appName, buildpacks, false)
+				app, err = PreparePhpApp(appName, []string{phpDistURI, phpWebURI}, false)
 				Expect(err).ToNot(HaveOccurred())
-				defer app.Destroy()
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
-				Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
 
-				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), MakeBuildEnv(debug), buildpacks...)
+				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), MakeBuildEnv(debug), []string{phpDistURI, phpWebURI}...)
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
-				Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
 				Expect(app.BuildLogs()).NotTo(MatchRegexp("PHP Web .*: Reusing cached layer"))
 
 				Expect(app.Start()).To(Succeed())
 			})
 		})
 	})
-
 }
 
 // NOTE: as extensions are added to the php-dist-cnb binaries, we need to update this list
