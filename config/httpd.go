@@ -144,4 +144,6 @@ Define fcgi-listener fcgi://{{.FpmSocket}}{{.AppRoot}}/{{.WebDirectory}}
 </Directory>
 
 RequestHeader unset Proxy early
+
+Include "{{.AppRoot}}/.httpd.conf.d/*.conf"
 `

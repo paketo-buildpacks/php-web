@@ -77,6 +77,20 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
+		it.Focus("serves a simple php page with httpd and custom httpd config", func() {
+			app, err = PushSimpleApp("simple_app_custom_httpd_cfg", []string{phpDistURI, httpdURI, phpWebURI}, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
+			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
+
+			resp, _, err := app.HTTPGet("/status?auto")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp).To(ContainSubstring("ServerMPM: event"))
+		})
+
 		it("serves a simple php page hosted with built-in PHP server", func() {
 			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())

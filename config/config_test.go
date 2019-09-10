@@ -69,6 +69,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
 		Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
 		Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
+		Expect(result).To(ContainSubstring(`Include "/app/.httpd.conf.d/*.conf"`))
 	})
 
 	it("generates an nginx.conf from the template", func() {
