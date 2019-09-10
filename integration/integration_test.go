@@ -113,7 +113,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("runs a cli app with arguments", func() {
-			app, err := PushSimpleApp("simple_cli_app_with_args", buildpacks, true)
+			app, err := PushSimpleApp("simple_cli_app_with_args", []string{phpDistURI, phpWebURI}, true)
 			Expect(err).NotTo(HaveOccurred())
 			defer app.Destroy()
 
