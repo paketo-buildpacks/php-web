@@ -76,7 +76,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					WebServer:    "httpd",
 					WebDirectory: "htdocs",
 					LibDirectory: "lib",
-					Script:       "app.php",
+					Script:       "",
 					ServerAdmin:  "admin@localhost",
 				},
 			}))
@@ -93,7 +93,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					WebServer:    "httpd",
 					WebDirectory: "htdocs",
 					LibDirectory: "lib",
-					Script:       "app.php",
+					Script:       "",
 					ServerAdmin:  "admin@example.com",
 				},
 			}

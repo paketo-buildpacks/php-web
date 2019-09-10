@@ -111,6 +111,16 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(logs).To(ContainSubstring("SUCCESS"))
 		})
+
+		it("runs a cli app with arguments", func() {
+			app, err := PushSimpleApp("simple_cli_app_with_args", buildpacks, true)
+			Expect(err).NotTo(HaveOccurred())
+			defer app.Destroy()
+
+			logs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(logs).To(ContainSubstring("ALTERNATE"))
+		})
 	})
 
 	when("deploying a basic PHP app with extensions", func() {

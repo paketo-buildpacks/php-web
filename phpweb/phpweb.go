@@ -28,6 +28,11 @@ const (
 	PhpWebServer = "php-server"
 )
 
+var (
+	// DefaultCliScript is the script used when one is not provided in buildpack.yml
+	DefaultCliScripts = []string{"app.php", "main.php", "run.php", "start.php"}
+)
+
 // Version returns the selected version of PHP using the following precedence:
 //
 // 1. `php.version` from `buildpack.yml`
@@ -64,7 +69,6 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML.Config.LibDirectory = "lib"
 	buildpackYAML.Config.WebDirectory = "htdocs"
 	buildpackYAML.Config.WebServer = ApacheHttpd
-	buildpackYAML.Config.Script = "app.php"
 	buildpackYAML.Config.ServerAdmin = "admin@localhost"
 
 	if exists, err := helper.FileExists(configFile); err != nil {
