@@ -202,6 +202,10 @@ http {
                 rewrite ^ $redirect_scheme://$http_host$uri/ permanent;
             }
         }
+
+		include {{.AppRoot}}/.nginx.conf.d/*-server.conf;
 	}
+
+	include {{.AppRoot}}/.nginx.conf.d/*-http.conf;
 }
 `

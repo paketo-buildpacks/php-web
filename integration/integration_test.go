@@ -77,7 +77,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
-		it.Focus("serves a simple php page with httpd and custom httpd config", func() {
+		it("serves a simple php page with httpd and custom httpd config", func() {
 			app, err = PushSimpleApp("simple_app_custom_httpd_cfg", []string{phpDistURI, httpdURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -115,6 +115,27 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
+		})
+
+		it("serves a simple php page with nginx and custom config", func() {
+			app, err = PushSimpleApp("simple_app_nginx_custom_cfg", []string{phpDistURI, nginxURI, phpWebURI}, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
+			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
+
+			// changed in custom-http.conf
+			resp, headers, err := app.HTTPGet("/test.php?date")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp).To(ContainSubstring("SUCCESS"))
+
+			// changed in custom-server.conf
+			serverHeader, found := headers["Server"]
+			Expect(found).To(BeTrue())
+			Expect(len(serverHeader)).To(Equal(1))
+			Expect(serverHeader[0]).To(MatchRegexp(`^nginx/\d+\.\d+\.\d+`))
 		})
 
 		it("runs a cli app", func() {

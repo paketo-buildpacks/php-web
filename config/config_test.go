@@ -87,6 +87,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		Expect(result).To(ContainSubstring(`root               /app/public;`))
 		Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
 		Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
+		Expect(result).To(ContainSubstring(`include /app/.nginx.conf.d/*.conf`))
 	})
 
 	it("generates a php.ini from the template", func() {
