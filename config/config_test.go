@@ -69,7 +69,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
 		Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
 		Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
-		Expect(result).To(ContainSubstring(`Include "/app/.httpd.conf.d/*.conf"`))
+		Expect(string(result)).To(ContainSubstring(`Include "/app/.httpd.conf.d/*.conf"`))
 	})
 
 	it("generates an nginx.conf from the template", func() {
@@ -87,7 +87,8 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		Expect(result).To(ContainSubstring(`root               /app/public;`))
 		Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
 		Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
-		Expect(result).To(ContainSubstring(`include /app/.nginx.conf.d/*.conf`))
+		Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-server.conf`))
+		Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-http.conf`))
 	})
 
 	it("generates a php.ini from the template", func() {
