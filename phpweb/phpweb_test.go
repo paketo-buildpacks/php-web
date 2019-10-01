@@ -42,6 +42,42 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 		RegisterTestingT(t)
 	})
 
+	when("checking for a web app", func() {
+		var factory *test.DetectFactory
+
+		it.Before(func() {
+			factory = test.NewDetectFactory(t)
+		})
+
+		it("defaults `php.webdir` to `htdocs`", func() {
+			Expect(PickWebDir(BuildpackYAML{})).To(Equal("htdocs"))
+		})
+
+		it("loads `php.webdirectory` from `buildpack.yml`", func() {
+			buildpackYAML := BuildpackYAML{
+				Config: Config{
+					WebDirectory: "public",
+				},
+			}
+
+			Expect(PickWebDir(buildpackYAML)).To(Equal("public"))
+		})
+
+		it("finds a web app under `<webdir>/*.php`", func() {
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
+			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeTrue())
+		})
+
+		it("doesn't find a web app under `<webdir>/*.php`", func() {
+			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeFalse())
+		})
+
+	})
+
 	when("a version is set", func() {
 		it("uses buildpack default version if set", func() {
 			buildpack := buildpack.NewBuildpack(bp.Buildpack{Metadata: buildpack.Metadata{"default_version": "test-version"}}, logger.Logger{})

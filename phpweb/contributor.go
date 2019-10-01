@@ -42,8 +42,6 @@ type Contributor struct {
 	layers        layers.Layers
 	logger        logger.Logger
 	buildpackYAML BuildpackYAML
-	isWebApp      bool
-	isScript      bool
 	procmgr       string
 	metadata      Metadata
 }
@@ -56,13 +54,16 @@ func generateRandomHash() [32]byte {
 
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
 func NewContributor(context build.Build) (c Contributor, willContribute bool, err error) {
+	shouldContribute := context.Plans.Has(Dependency)
+	if !shouldContribute {
+		return Contributor{}, false, nil
+	}
+
 	buildpackYAML, err := LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return Contributor{}, false, err
 	}
 
-	isWebApp := context.Plans.Has(WebDependency)
-	isScript := context.Plans.Has(ScriptDependency)
 	randomHash := generateRandomHash()
 
 	contributor := Contributor{
@@ -70,8 +71,6 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		layers:        context.Layers,
 		logger:        context.Logger,
 		buildpackYAML: buildpackYAML,
-		isWebApp:      isWebApp,
-		isScript:      isScript,
 		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
 		metadata:      Metadata{"PHP Web", hex.EncodeToString(randomHash[:])},
 	}
@@ -81,22 +80,21 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 
 // Contribute contributes an expanded PHP to a cache layer.
 func (c Contributor) Contribute() error {
-	if c.isWebApp {
-		c.logger.Header("Configuring PHP Web Application")
+	l := c.layers.Layer(Dependency)
 
-		l := c.layers.Layer(WebDependency)
-		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
+	webDir := PickWebDir(c.buildpackYAML)
+	isWebApp, err := SearchForWebApp(c.application.Root, webDir)
+	if err != nil {
+		return err
 	}
 
-	if c.isScript {
+	if isWebApp {
+		c.logger.Header("Configuring PHP Web Application")
+		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
+	} else {
 		c.logger.Header("Configuring PHP Script")
-
-		l := c.layers.Layer(ScriptDependency)
 		return l.Contribute(c.metadata, c.contributeScript, c.flags()...)
 	}
-
-	c.logger.BodyWarning("WARNING: Did not detect either a web app or a PHP script to run. App will not start unless you specify a custom start command.")
-	return nil
 }
 
 func (c Contributor) contributeWebApp(layer layers.Layer) error {
@@ -178,6 +176,7 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 	if err := c.initPhp(layer); err != nil {
 		return err
 	}
+
 
 	if c.buildpackYAML.Config.Script == "" {
 		for _, possible := range DefaultCliScripts {

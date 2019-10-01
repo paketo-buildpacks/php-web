@@ -19,6 +19,7 @@ package phpweb
 import (
 	"bytes"
 	"fmt"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,6 +50,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		RegisterTestingT(t)
 		f = test.NewBuildFactory(t)
 
+		f.AddPlan(buildpackplan.Plan{Name: Dependency})
+
 		var err error
 		c, _, err = NewContributor(f.Build)
 		Expect(err).To(Not(HaveOccurred()))
@@ -56,9 +59,23 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "procmgr"), os.ModePerm, "")).To(Succeed())
 	})
 
+	when("creating a new contributor", func() {
+		it("generates random Metadata to prevent php-web layer from being cached", func() {
+			c, _, err := NewContributor(f.Build)
+			Expect(err).To(Not(HaveOccurred()))
+
+			Expect(c.metadata.Name).To(Equal("PHP Web"))
+			Expect(len(c.metadata.Hash)).To(Equal(64))
+		})
+	})
+
 	when("starting a web app", func() {
+		it.Before(func() {
+			buildDir := filepath.Join(f.Build.Application.Root, "htdocs", "index.php")
+			helper.WriteFile(buildDir, 0644, "junk")
+		})
+
 		it("starts a web app with `php -S`", func() {
-			c.isWebApp = true
 			c.buildpackYAML.Config.WebServer = PhpWebServer
 
 			Expect(c.Contribute()).To(Succeed())
@@ -73,12 +90,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app with HTTPD", func() {
-			c.isWebApp = true
 			c.buildpackYAML.Config.WebServer = ApacheHttpd
 
 			Expect(c.Contribute()).To(Succeed())
 
-			phpLayer := f.Build.Layers.Layer(WebDependency)
+			phpLayer := f.Build.Layers.Layer(Dependency)
 			procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
@@ -106,11 +122,9 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app and defaults to Apache Web Server", func() {
-			c.isWebApp = true
-
 			Expect(c.Contribute()).To(Succeed())
 
-			phpLayer := f.Build.Layers.Layer(WebDependency)
+			phpLayer := f.Build.Layers.Layer(Dependency)
 			procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
@@ -145,9 +159,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app with a custom webdir", func() {
-			c.isWebApp = true
 			c.buildpackYAML.Config.WebServer = PhpWebServer
 			c.buildpackYAML.Config.WebDirectory = "public"
+
+			buildDir := filepath.Join(f.Build.Application.Root, c.buildpackYAML.Config.WebDirectory, "index.php")
+			helper.WriteFile(buildDir, 0644, "junk")
 
 			Expect(c.Contribute()).To(Succeed())
 
@@ -161,12 +177,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app with NGINX", func() {
-			c.isWebApp = true
 			c.buildpackYAML.Config.WebServer = Nginx
 
 			Expect(c.Contribute()).To(Succeed())
 
-			phpLayer := f.Build.Layers.Layer(WebDependency)
+			phpLayer := f.Build.Layers.Layer(Dependency)
 			procFile := filepath.Join(phpLayer.Root, "procs.yml")
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
@@ -193,67 +208,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			Expect(procs.Processes).To(ContainElement(nginxProc))
 		})
 
-		it("starts an app that is neither web nor script but doesn't generate a start command", func() {
-			c.isWebApp = false
-			c.isScript = false
-
-			Expect(c.Contribute()).To(Succeed())
-
-			phpLayer := f.Build.Layers.Layer(WebDependency)
-			procFile := filepath.Join(phpLayer.Root, "procs.yml")
-			Expect(procFile).ToNot(BeAnExistingFile())
-		})
-
-		when("the requested web server is not supported", func() {
-			it("does not provide a start command", func() {
-				c.isWebApp = true
-				c.buildpackYAML.Config.WebServer = "notsupportedserver"
-
-				Expect(c.Contribute()).To(Succeed())
-
-				phpLayer := f.Build.Layers.Layer(WebDependency)
-				procFile := filepath.Join(phpLayer.Root, "procs.yml")
-				Expect(procFile).ToNot(BeAnExistingFile())
-			})
-		})
-	})
-
-	when("contributing to build", func() {
-		it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
-			c.isWebApp = true
-			c.buildpackYAML.Config.WebServer = PhpWebServer
-
-			layer := f.Build.Layers.Layer(WebDependency)
-			Expect(c.Contribute()).To(Succeed())
-			Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
-			Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
-			Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
-		})
-
-		it("contributes a php.ini file & configures PHP to look at it for a script", func() {
-			c.isScript = true
-
-			layer := f.Build.Layers.Layer(ScriptDependency)
-			Expect(c.Contribute()).To(Succeed())
-			Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
-			Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
-			Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
-		})
-
-		it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
-			c.isWebApp = true
-			c.buildpackYAML.Config.WebServer = ApacheHttpd
-
-			layer := f.Build.Layers.Layer(WebDependency)
-			Expect(c.Contribute()).To(Succeed())
-			Expect(filepath.Join(f.Build.Application.Root, "httpd.conf")).To(BeARegularFile())
-			Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
-		})
-
 		it("contributes php-fpm.conf & includes a user's config", func() {
 			helper.WriteFile(filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), 0644, "")
 
-			layer := f.Build.Layers.Layer(WebDependency)
+			layer := f.Build.Layers.Layer(Dependency)
 			err := c.writePhpFpmConf(layer, "")
 
 			Expect(err).ToNot(HaveOccurred())
@@ -265,20 +223,68 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			Expect(string(result)).To(ContainSubstring(fmt.Sprintf(`include=%s`, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "*.conf"))))
 		})
 
-		it("contributes a nginx.conf & php-fpm.conf file when using Nginx", func() {
-			c.isWebApp = true
-			c.buildpackYAML.Config.WebServer = Nginx
+		when("the requested web server is not supported", func() {
+			it("does not provide a start command", func() {
+				c.buildpackYAML.Config.WebServer = "notsupportedserver"
 
-			layer := f.Build.Layers.Layer(WebDependency)
-			Expect(c.Contribute()).To(Succeed())
-			Expect(filepath.Join(f.Build.Application.Root, "nginx.conf")).To(BeARegularFile())
-			Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
+				Expect(c.Contribute()).To(Succeed())
+
+				phpLayer := f.Build.Layers.Layer(Dependency)
+				procFile := filepath.Join(phpLayer.Root, "procs.yml")
+				Expect(procFile).ToNot(BeAnExistingFile())
+			})
+		})
+	})
+
+	when("contributing to build", func() {
+		when("it's a web app", func() {
+			it.Before(func() {
+				buildDir := filepath.Join(f.Build.Application.Root, "htdocs", "index.php")
+				helper.WriteFile(buildDir, 0644, "junk")
+			})
+
+			it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
+				c.buildpackYAML.Config.WebServer = PhpWebServer
+
+				layer := f.Build.Layers.Layer(Dependency)
+				Expect(c.Contribute()).To(Succeed())
+				Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+				Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
+				Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
+			})
+
+			it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
+				c.buildpackYAML.Config.WebServer = ApacheHttpd
+
+				layer := f.Build.Layers.Layer(Dependency)
+				Expect(c.Contribute()).To(Succeed())
+				Expect(filepath.Join(f.Build.Application.Root, "httpd.conf")).To(BeARegularFile())
+				Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
+			})
+
+			it("contributes a nginx.conf & php-fpm.conf file when using Nginx", func() {
+				c.buildpackYAML.Config.WebServer = Nginx
+
+				layer := f.Build.Layers.Layer(Dependency)
+				Expect(c.Contribute()).To(Succeed())
+				Expect(filepath.Join(f.Build.Application.Root, "nginx.conf")).To(BeARegularFile())
+				Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
+			})
+		})
+
+		when("it's not a web app", func() {
+			it("contributes a php.ini file & configures PHP to look at it for a script", func() {
+				layer := f.Build.Layers.Layer(Dependency)
+				Expect(c.Contribute()).To(Succeed())
+				Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
+				Expect(layer).To(test.HaveOverrideSharedEnvironment("PHPRC", filepath.Join(layer.Root, "etc")))
+				Expect(layer).To(test.HaveOverrideSharedEnvironment("PHP_INI_SCAN_DIR", filepath.Join(f.Build.Application.Root, ".php.ini.d")))
+			})
 		})
 	})
 
 	when("starting a PHP script", func() {
 		it("starts a script using default `app.php`", func() {
-			c.isScript = true
 
 			for _, script := range DefaultCliScripts {
 				scriptName := filepath.Join(f.Build.Application.Root, script)
@@ -300,7 +306,6 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a script using custom script path/name", func() {
-			c.isScript = true
 			c.buildpackYAML.Config.Script = "relative/path/to/my/script.php"
 
 			Expect(c.Contribute()).To(Succeed())
@@ -319,20 +324,10 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			info := &bytes.Buffer{}
 
 			c.logger = logger.Logger{Logger: bplogger.NewLogger(debug, info)}
-			c.isScript = true
 
 			Expect(c.Contribute()).To(Succeed())
 			Expect(info.String()).To(ContainSubstring("Buildpack could not find a file to execute. Either set php.script in buildpack.yml or include one of these files [app.php, main.php, run.php, start.php]"))
 		})
 	})
 
-	when("creating a new contributor", func() {
-		it("generates random Metadata to prevent php-web layer from being cached", func() {
-			c, _, err := NewContributor(f.Build)
-			Expect(err).To(Not(HaveOccurred()))
-
-			Expect(c.metadata.Name).To(Equal("PHP Web"))
-			Expect(len(c.metadata.Hash)).To(Equal(64))
-		})
-	})
 }

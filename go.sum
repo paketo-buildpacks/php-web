@@ -25,6 +25,8 @@ github.com/cloudfoundry/libcfbuildpack v1.85.0 h1:7ncRWtaz2zltkaKx4lrzj1xZihEu6U
 github.com/cloudfoundry/libcfbuildpack v1.85.0/go.mod h1:SU8UqWgq0UMx6FegsTxny8LPFQBC/AcLBlbc/H760Ag=
 github.com/cloudfoundry/libcfbuildpack v1.88.1 h1:lRplzgEYLxvJkpYf85RY2BaH4CBVX2jFQ3mqJTLKCho=
 github.com/cloudfoundry/libcfbuildpack v1.88.1/go.mod h1:QejuzmxKISD3/i1j2v7T2+fvUyUpBhRahyk/K05Fa14=
+github.com/cloudfoundry/nginx-cnb v0.0.33 h1:5b6yhkZshV+OkTbWBd5c7+VRfVkOSENfVmVnz0TauCE=
+github.com/cloudfoundry/nginx-cnb v0.0.33/go.mod h1:OZRfdOzV5xNp2/TyNd6cVPq0Tdao95WRpTkZBJuqfSY=
 github.com/cloudfoundry/php-dist-cnb v0.0.29 h1:AW9Jo/GJ+0QOrchgO9Yxdor+Xc2UyuLr+DeO9coLRCY=
 github.com/cloudfoundry/php-dist-cnb v0.0.29/go.mod h1:u0jcZhJCtOlEucv3UbrlPrjghl19t4l7LOFGICTAIN8=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=

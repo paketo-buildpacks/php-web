@@ -47,33 +47,6 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("there is a PHP web app", func() {
-		it("defaults `php.webdir` to `htdocs`", func() {
-			Expect(pickWebDir(phpweb.BuildpackYAML{})).To(Equal("htdocs"))
-		})
-
-		it("loads `php.webdir` from `buildpack.yml`", func() {
-			buildpackYAML := phpweb.BuildpackYAML{
-				Config: phpweb.Config{
-					WebDirectory: "public",
-				},
-			}
-
-			Expect(pickWebDir(buildpackYAML)).To(Equal("public"))
-		})
-
-		it("finds a web app under `<webdir>/*.php`", func() {
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			found, err := searchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeTrue())
-		})
-
-		it("doesn't find a web app under `<webdir>/*.php`", func() {
-			found, err := searchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeFalse())
-		})
-
 		it("sets the proper buildplan items", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
 			fakeVersion := "php.default.version"
@@ -87,14 +60,14 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
 							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 					{
 						Name:     "httpd",
 						Metadata: buildplan.Metadata{"launch": true},
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 				},
 			}))
 		})
@@ -112,14 +85,14 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
 							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 					{
 						Name:     "httpd",
 						Metadata: buildplan.Metadata{"launch": true},
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 				},
 			}))
 		})
@@ -148,14 +121,14 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
 							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 					{
 						Name:     "nginx",
 						Metadata: buildplan.Metadata{"launch": true},
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.WebDependency},
+					{Name: phpweb.Dependency},
 				},
 			}))
 		})
@@ -165,7 +138,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("finds a script in the root", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "main.php"), "")
 
-			found, err := searchForScript(factory.Detect.Application.Root, factory.Detect.Logger)
+			found, err := searchForAnyPHPFiles(factory.Detect.Application.Root, factory.Detect.Logger)
 			Expect(err).To(Not(HaveOccurred()))
 			Expect(found).To(BeTrue())
 		})
@@ -173,13 +146,13 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("finds a script in a nested directory", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "test", "cli", "subdir", "my_cli.php"), "")
 
-			found, err := searchForScript(factory.Detect.Application.Root, factory.Detect.Logger)
+			found, err := searchForAnyPHPFiles(factory.Detect.Application.Root, factory.Detect.Logger)
 			Expect(err).To(Not(HaveOccurred()))
 			Expect(found).To(BeTrue())
 		})
 
 		it("doesn't find any script", func() {
-			found, err := searchForScript(factory.Detect.Application.Root, factory.Detect.Logger)
+			found, err := searchForAnyPHPFiles(factory.Detect.Application.Root, factory.Detect.Logger)
 			Expect(err).To(Not(HaveOccurred()))
 			Expect(found).To(BeFalse())
 		})
@@ -198,10 +171,10 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
 							buildpackplan.VersionSource: php.DefaultVersionsSource},
 					},
-					{Name: phpweb.ScriptDependency},
+					{Name: phpweb.Dependency},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.ScriptDependency},
+					{Name: phpweb.Dependency},
 				},
 			}))
 		})
