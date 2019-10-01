@@ -48,27 +48,7 @@ func main() {
 	os.Exit(code)
 }
 
-func pickWebDir(buildpackYAML phpweb.BuildpackYAML) string {
-	if buildpackYAML.Config.WebDirectory != "" {
-		return buildpackYAML.Config.WebDirectory
-	}
-
-	return "htdocs"
-}
-
-func searchForWebApp(appRoot string, webdir string) (bool, error) {
-	matchList, err := filepath.Glob(filepath.Join(appRoot, webdir, "*.php"))
-	if err != nil {
-		return false, err
-	}
-
-	if len(matchList) > 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
-func searchForScript(appRoot string, log logger.Logger) (bool, error) {
+func searchForAnyPHPFiles(appRoot string, log logger.Logger) (bool, error) {
 	found := false
 
 	err := filepath.Walk(appRoot, func(path string, info os.FileInfo, err error) error {
@@ -101,61 +81,47 @@ func runDetect(context detect.Detect) (int, error) {
 		return context.Fail(), err
 	}
 
-	webDir := pickWebDir(buildpackYAML)
+	webDir := phpweb.PickWebDir(buildpackYAML)
 	version := phpweb.Version(context.Buildpack)
-	isWebApp, err := searchForWebApp(context.Application.Root, webDir)
+	isWebApp, err := phpweb.SearchForWebApp(context.Application.Root, webDir)
 	if err != nil {
 		return context.Fail(), err
 	}
 
-	isScriptApp, err := searchForScript(context.Application.Root, context.Logger)
+	hasAnyPHPFiles, err := searchForAnyPHPFiles(context.Application.Root, context.Logger)
 	if err != nil {
 		return context.Fail(), err
 	}
 
-	if !(isWebApp || isScriptApp) {
+	if !(isWebApp || hasAnyPHPFiles) {
 		return context.Fail(), nil
 	}
 
-	var plan buildplan.Plan
+	plan := buildplan.Plan{
+		Provides: []buildplan.Provided{
+			{
+				Name: phpweb.Dependency,
+			},
+		},
+		Requires: []buildplan.Required{
+			requiredPHP(version),
+			{
+				Name: phpweb.Dependency,
+			},
+		},
+	}
+
 	if isWebApp {
 		webServer := pickWebServer(buildpackYAML)
-		plan = buildplan.Plan{
-			Requires: []buildplan.Required{
-				requiredPHP(version),
-				{
-					Name: phpweb.WebDependency,
-				},
-				{
-					Name:     webServer,
-					Metadata: buildplan.Metadata{"launch": true},
-				},
-			},
-			Provides: []buildplan.Provided{
-				{
-					Name: phpweb.WebDependency,
-				},
-			},
-		}
+		plan.Requires = append(plan.Requires, buildplan.Required{
+			Name:     webServer,
+			Metadata: buildplan.Metadata{"launch": true},
+		})
 
 		if webServer == phpweb.PhpWebServer {
 			plan.Provides = append(plan.Provides, buildplan.Provided{
 				Name: phpweb.PhpWebServer,
 			})
-		}
-	} else if isScriptApp {
-		plan = buildplan.Plan{
-			Requires: []buildplan.Required{
-				requiredPHP(version),
-				{
-					Name: phpweb.ScriptDependency,
-				},
-			},
-			Provides: []buildplan.Provided{
-				{
-					Name: phpweb.ScriptDependency,
-				},
-			},
 		}
 	}
 

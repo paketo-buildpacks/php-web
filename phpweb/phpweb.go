@@ -13,10 +13,7 @@ import (
 
 const (
 	// WebDependency in the buildplan indicates that this is a web app
-	WebDependency = "php-web"
-
-	// ScriptDependency in the buildplan indicates that this is a script app
-	ScriptDependency = "php-script"
+	Dependency = "php-web"
 
 	// Nginx is text user can specify to request Nginx Web Server
 	Nginx = "nginx"
@@ -119,6 +116,28 @@ func GetPhpFpmConfPath(appRoot string) (string, error) {
 	}
 
 	return userIncludePath, nil
+}
+
+// PickWebDir will select the correct web directory to use
+func PickWebDir(buildpackYAML BuildpackYAML) string {
+	if buildpackYAML.Config.WebDirectory != "" {
+		return buildpackYAML.Config.WebDirectory
+	}
+
+	return "htdocs"
+}
+
+// SearchForWebApp looks to see if this application is a PHP web app
+func SearchForWebApp(appRoot string, webdir string) (bool, error) {
+	matchList, err := filepath.Glob(filepath.Join(appRoot, webdir, "*.php"))
+	if err != nil {
+		return false, err
+	}
+
+	if len(matchList) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 type Metadata struct {
