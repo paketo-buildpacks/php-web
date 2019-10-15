@@ -63,7 +63,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("deploying the simple_app fixture", func() {
-		it.Focus("serves a simple php page with httpd", func() {
+		it("serves a simple php page with httpd", func() {
 			app, err = PushSimpleApp("simple_app", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -77,7 +77,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
-		it.Focus("serves a simple php page with httpd and custom httpd config", func() {
+		it("serves a simple php page with httpd and custom httpd config", func() {
 			app, err = PushSimpleApp("simple_app_custom_httpd_cfg", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -103,7 +103,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
-		it.Focus("serves a simple php page with nginx", func() {
+		it("serves a simple php page with nginx", func() {
 			app, err = PushSimpleApp("simple_app_nginx", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -117,7 +117,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
-		it.Focus("serves a simple php page with nginx and custom config", func() {
+		it("serves a simple php page with nginx and custom config", func() {
 			app, err = PushSimpleApp("simple_app_nginx_custom_cfg", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
