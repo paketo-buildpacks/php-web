@@ -6,7 +6,7 @@ require (
 	github.com/buildpack/libbuildpack v1.25.2
 	github.com/cloudfoundry/dagger v0.0.0-20191025181811-15ebd2408e87
 	github.com/cloudfoundry/httpd-cnb v0.0.19
-	github.com/cloudfoundry/libcfbuildpack v1.90.0
+	github.com/cloudfoundry/libcfbuildpack v1.91.0
 	github.com/cloudfoundry/php-dist-cnb v0.0.29
 	github.com/onsi/gomega v1.7.0
 	github.com/sclevine/spec v1.3.0
