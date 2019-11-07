@@ -49,8 +49,8 @@ github.com/cloudfoundry/libcfbuildpack v1.91.3 h1:SvknKBrrfX1sD6cz2RIm+zxKIbn0Oa
 github.com/cloudfoundry/libcfbuildpack v1.91.3/go.mod h1:oHi1a/+zLoZPtxOR62SZLp0rZ/bYJ2Xp85gsoxBeYEM=
 github.com/cloudfoundry/packit v0.0.0-20191014140300-f8d2e0b20a04 h1:IKq64UyPDs+HD8dDE7fRHC+W/Vw2L0J+GfPuTiTTo50=
 github.com/cloudfoundry/packit v0.0.0-20191014140300-f8d2e0b20a04/go.mod h1:m8hk5BTIclmOWMxv3aQKIU/0LA4FVe4XKC9o0VNsLow=
-github.com/cloudfoundry/php-dist-cnb v0.0.29 h1:AW9Jo/GJ+0QOrchgO9Yxdor+Xc2UyuLr+DeO9coLRCY=
-github.com/cloudfoundry/php-dist-cnb v0.0.29/go.mod h1:u0jcZhJCtOlEucv3UbrlPrjghl19t4l7LOFGICTAIN8=
+github.com/cloudfoundry/php-dist-cnb v0.0.60 h1:RJEBuqr8QujO81VCyLwUoP+6NvlRKjAz39xL30ws3F8=
+github.com/cloudfoundry/php-dist-cnb v0.0.60/go.mod h1:TxLqK4rBAV096kog8+y2Wi0nrxbDdJyzE4oJpFaST8c=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=

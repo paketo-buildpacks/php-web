@@ -9,15 +9,15 @@ This buildpack is designed to work in collaboration with other buildpacks which 
 The detection phase passes if
 
 - `<APPLICATION_ROOT>/<WEBDIR>/*.php` exists
-  - Contributes `php-binary` to the build plan
-  - Contributes `php-binary.metadata.launch = true` to the build plan
+  - Contributes `php` to the build plan
+  - Contributes `php.metadata.launch = true` to the build plan
   - Contributes `php-web` to the build plan
 
 if no web app is found then detection can still pass if
 
 - `<APPLICATION_ROOT>/**/*.php` exists
-  - Contributes `php-binary` to the build plan
-  - Contributes `php-binary.metadata.launch = true` to the build plan
+  - Contributes `php` to the build plan
+  - Contributes `php.metadata.launch = true` to the build plan
   - Contributes `php-script` to the build plan
 
 ## Build
