@@ -83,8 +83,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "htdocs")
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"task", command, false},
-					{"web", command, false},
+					{Type: "task", Command: command, Direct: false},
+					{Type: "web", Command: command, Direct: false},
 				},
 			}))
 		})
@@ -99,7 +99,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"web", fmt.Sprintf("procmgr %s", procFile), false},
+					{Type: "web", Command: fmt.Sprintf("procmgr %s", procFile), Direct: false},
 				},
 			}))
 
@@ -129,7 +129,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"web", fmt.Sprintf("procmgr %s", procFile), false},
+					{Type: "web", Command: fmt.Sprintf("procmgr %s", procFile), Direct: false},
 				},
 			}))
 
@@ -170,8 +170,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "public")
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"task", command, false},
-					{"web", command, false},
+					{Type: "task", Command: command, Direct: false},
+					{Type: "web", Command: command, Direct: false},
 				},
 			}))
 		})
@@ -186,7 +186,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"web", fmt.Sprintf("procmgr %s", procFile), false},
+					{Type: "web", Command: fmt.Sprintf("procmgr %s", procFile), Direct: false},
 				},
 			}))
 
@@ -296,8 +296,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 				command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, script)
 				Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 					Processes: []layers.Process{
-						{"task", command, false},
-						{"web", command, false},
+						{Type: "task", Command: command, Direct: false},
+						{Type: "web", Command: command, Direct: false},
 					},
 				}))
 
@@ -313,8 +313,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "relative/path/to/my/script.php")
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
 				Processes: []layers.Process{
-					{"task", command, false},
-					{"web", command, false},
+					{Type: "task", Command: command, Direct: false},
+					{Type: "web", Command: command, Direct: false},
 				},
 			}))
 		})

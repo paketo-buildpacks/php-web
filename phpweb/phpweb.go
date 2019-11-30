@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// WebDependency in the buildplan indicates that this is a web app
+	// Dependency in the buildplan indicates that this is a web app
 	Dependency = "php-web"
 
 	// Nginx is text user can specify to request Nginx Web Server
@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	// DefaultCliScript is the script used when one is not provided in buildpack.yml
+	// DefaultCliScripts is the script used when one is not provided in buildpack.yml
 	DefaultCliScripts = []string{"app.php", "main.php", "run.php", "start.php"}
 )
 
@@ -57,6 +57,12 @@ type Config struct {
 	LibDirectory string `yaml:"libdirectory"`
 	Script       string `yaml:"script"`
 	ServerAdmin  string `yaml:"serveradmin"`
+	Redis        Redis  `yaml:"redis"`
+}
+
+// Redis represents PHP Redis specific configuration options for `buildpack.yml`
+type Redis struct {
+	SessionStoreServiceName string `yaml:"session_store_service_name"`
 }
 
 // LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
@@ -67,6 +73,7 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML.Config.WebDirectory = "htdocs"
 	buildpackYAML.Config.WebServer = ApacheHttpd
 	buildpackYAML.Config.ServerAdmin = "admin@localhost"
+	buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
 
 	if exists, err := helper.FileExists(configFile); err != nil {
 		return BuildpackYAML{}, err
@@ -140,6 +147,7 @@ func SearchForWebApp(appRoot string, webdir string) (bool, error) {
 	return false, nil
 }
 
+// Metadata is used solely for providing `Identity()`
 type Metadata struct {
 	Name string
 	Hash string
@@ -148,4 +156,18 @@ type Metadata struct {
 // Identity provides libcfbuildpack with information to decide if it should contribute
 func (m Metadata) Identity() (name string, version string) {
 	return m.Name, m.Hash
+}
+
+// Feature is used to add additional features to the CNB
+type Feature interface {
+	// Name of the feature (for debugging purposes)
+	Name() string
+
+	// IsNeeded indicates if this feature is required
+	//   frue will enable the feature
+	//   false means it's skipped
+	IsNeeded() bool
+
+	// EnableFeature will perform the work of enabling the feature
+	EnableFeature() error
 }

@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/php-web-cnb/features"
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
 	"github.com/cloudfoundry/php-web-cnb/config"
@@ -44,6 +45,7 @@ type Contributor struct {
 	buildpackYAML BuildpackYAML
 	procmgr       string
 	metadata      Metadata
+	features      []Feature
 }
 
 func generateRandomHash() [32]byte {
@@ -73,6 +75,9 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		buildpackYAML: buildpackYAML,
 		procmgr:       filepath.Join(context.Buildpack.Root, "bin", "procmgr"),
 		metadata:      Metadata{"PHP Web", hex.EncodeToString(randomHash[:])},
+		features: []Feature{
+			features.NewRedisFeature(context.Application, context.Services, buildpackYAML.Config.Redis.SessionStoreServiceName),
+		},
 	}
 
 	return contributor, true, nil
@@ -91,15 +96,31 @@ func (c Contributor) Contribute() error {
 	if isWebApp {
 		c.logger.Header("Configuring PHP Web Application")
 		return l.Contribute(c.metadata, c.contributeWebApp, c.flags()...)
-	} else {
-		c.logger.Header("Configuring PHP Script")
-		return l.Contribute(c.metadata, c.contributeScript, c.flags()...)
 	}
+
+	c.logger.Header("Configuring PHP Script")
+	return l.Contribute(c.metadata, c.contributeScript, c.flags()...)
 }
 
 func (c Contributor) contributeWebApp(layer layers.Layer) error {
 	if err := c.initPhp(layer); err != nil {
 		return err
+	}
+
+	// install features
+	// TODO: test??
+	//     - make sure feature is installed
+	//     - check `phpinfo()` to confirm it's enabled and configured
+	for _, feature := range c.features {
+		if feature.IsNeeded() {
+			c.logger.Body("Installing feature -- %s", feature.Name())
+			err := feature.EnableFeature()
+			if err != nil {
+				c.logger.BodyError("Failed %s", err)
+			}
+		} else {
+			c.logger.Debug("Skipping feature -- %s", feature.Name())
+		}
 	}
 
 	c.logger.Body("Requested web server: %s", c.buildpackYAML.Config.WebServer)
@@ -112,8 +133,8 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 
 		return c.layers.WriteApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command, false},
-				{"task", command, false},
+				{Type: "web", Command: command, Direct: false},
+				{Type: "task", Command: command, Direct: false},
 			},
 		})
 	} else if webServerName == ApacheHttpd {
@@ -168,15 +189,17 @@ func (c Contributor) contributeWebServer(layer layers.Layer, name string, webPro
 		return fmt.Errorf("failed to write procs.yml: %s", err)
 	}
 
-	return c.layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml), false}}})
-
+	return c.layers.WriteApplicationMetadata(layers.Metadata{
+		Processes: []layers.Process{
+			{Type: "web", Command: fmt.Sprintf("procmgr %s", procsYaml), Direct: false},
+		},
+	})
 }
 
 func (c Contributor) contributeScript(layer layers.Layer) error {
 	if err := c.initPhp(layer); err != nil {
 		return err
 	}
-
 
 	if c.buildpackYAML.Config.Script == "" {
 		for _, possible := range DefaultCliScripts {
@@ -203,8 +226,8 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 
 	return c.layers.WriteApplicationMetadata(layers.Metadata{
 		Processes: []layers.Process{
-			{"web", command, false},
-			{"task", command, false},
+			{Type: "web", Command: command, Direct: false},
+			{Type: "task", Command: command, Direct: false},
 		},
 	})
 }

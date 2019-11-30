@@ -114,6 +114,9 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					LibDirectory: "lib",
 					Script:       "",
 					ServerAdmin:  "admin@localhost",
+					Redis: Redis{
+						SessionStoreServiceName: "redis-sessions",
+					},
 				},
 			}))
 		})
@@ -131,6 +134,9 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 					LibDirectory: "lib",
 					Script:       "",
 					ServerAdmin:  "admin@example.com",
+					Redis: Redis{
+						SessionStoreServiceName: "redis-sessions",
+					},
 				},
 			}
 
