@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/layers"
+
 	"github.com/buildpack/libbuildpack/services"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
@@ -23,15 +25,15 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 
 	when("redis is present", func() {
 		var (
-			factory *test.DetectFactory
+			factory *test.BuildFactory
 			r       RedisFeature
 		)
 
 		it.Before(func() {
-			factory = test.NewDetectFactory(t)
+			factory = test.NewBuildFactory(t)
 			r = NewRedisFeature(
-				factory.Detect.Application,
-				factory.Detect.Services,
+				factory.Build.Application,
+				factory.Build.Services,
 				"redis-sessions",
 			)
 		})
@@ -41,7 +43,7 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			})
-			r.services = factory.Detect.Services // we must do this because we added a service after `Before(..)`
+			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
@@ -51,7 +53,7 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			}, "redis")
-			r.services = factory.Detect.Services // we must do this because we added a service after `Before(..)`
+			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
@@ -61,13 +63,14 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			})
-			r.services = factory.Detect.Services // we must do this because we added a service after `Before(..)`
+			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
 
 		it("is enabled with defaults", func() {
-			err := r.EnableFeature()
+			layer := factory.Build.Layers.Layer("layer-1")
+			err := r.EnableFeature(layers.Layers{}, layer)
 			Expect(err).ToNot(HaveOccurred())
 
 			iniPath := filepath.Join(r.appRoot, ".php.ini.d", "redis-sessions.ini")
@@ -88,9 +91,10 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"port":     65309,
 				"password": "fake!@#$%^&*()-={]}[?><,./;':",
 			})
-			r.services = factory.Detect.Services // we must do this because we added a service after `Before(..)`
+			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
 
-			err := r.EnableFeature()
+			layer := factory.Build.Layers.Layer("layer-1")
+			err := r.EnableFeature(layers.Layers{}, layer)
 			Expect(err).ToNot(HaveOccurred())
 
 			iniPath := filepath.Join(r.appRoot, ".php.ini.d", "redis-sessions.ini")
@@ -107,14 +111,14 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("redis isn't present", func() {
-		var factory *test.DetectFactory
+		var factory *test.BuildFactory
 
 		it.Before(func() {
-			factory = test.NewDetectFactory(t)
+			factory = test.NewBuildFactory(t)
 		})
 
 		it("is not detected", func() {
-			r := RedisFeature{services: factory.Detect.Services}
+			r := RedisFeature{services: factory.Build.Services}
 			Expect(r.IsNeeded()).To(BeFalse())
 		})
 	})

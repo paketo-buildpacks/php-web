@@ -19,11 +19,15 @@ package phpweb
 import (
 	"bytes"
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+	"github.com/cloudfoundry/php-web-cnb/config"
 
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
@@ -44,7 +48,20 @@ func TestUnitContributor(t *testing.T) {
 
 func testContributor(t *testing.T, when spec.G, it spec.S) {
 	var f *test.BuildFactory
-	var c Contributor
+	var CreateTestContributor func(bpYAML config.BuildpackYAML) Contributor
+
+	CreateTestContributor = func(bpYAML config.BuildpackYAML) Contributor {
+		bytes, err := yaml.Marshal(bpYAML)
+		Expect(err).To(Not(HaveOccurred()))
+
+		err = helper.WriteFile(filepath.Join(f.Build.Application.Root, "buildpack.yml"), 0644, string(bytes))
+		Expect(err).To(Not(HaveOccurred()))
+
+		c, _, err := NewContributor(f.Build)
+		Expect(err).To(Not(HaveOccurred()))
+
+		return c
+	}
 
 	it.Before(func() {
 		RegisterTestingT(t)
@@ -52,17 +69,12 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 		f.AddPlan(buildpackplan.Plan{Name: Dependency})
 
-		var err error
-		c, _, err = NewContributor(f.Build)
-		Expect(err).To(Not(HaveOccurred()))
-
 		Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "procmgr"), os.ModePerm, "")).To(Succeed())
 	})
 
 	when("creating a new contributor", func() {
 		it("generates random Metadata to prevent php-web layer from being cached", func() {
-			c, _, err := NewContributor(f.Build)
-			Expect(err).To(Not(HaveOccurred()))
+			c := CreateTestContributor(config.BuildpackYAML{})
 
 			Expect(c.metadata.Name).To(Equal("PHP Web"))
 			Expect(len(c.metadata.Hash)).To(Equal(64))
@@ -75,23 +87,12 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			helper.WriteFile(buildDir, 0644, "junk")
 		})
 
-		it("starts a web app with `php -S`", func() {
-			c.buildpackYAML.Config.WebServer = PhpWebServer
-
-			Expect(c.Contribute()).To(Succeed())
-
-			command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "htdocs")
-			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{Type: "task", Command: command, Direct: false},
-					{Type: "web", Command: command, Direct: false},
-				},
-			}))
-		})
-
 		it("starts a web app with HTTPD", func() {
-			c.buildpackYAML.Config.WebServer = ApacheHttpd
-
+			c := CreateTestContributor(config.BuildpackYAML{
+				Config: config.Config{
+					WebServer: config.ApacheHttpd,
+				},
+			})
 			Expect(c.Contribute()).To(Succeed())
 
 			phpLayer := f.Build.Layers.Layer(Dependency)
@@ -122,6 +123,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app and defaults to Apache Web Server", func() {
+			c := CreateTestContributor(config.BuildpackYAML{
+				Config: config.Config{
+					WebServer: config.ApacheHttpd,
+				},
+			})
 			Expect(c.Contribute()).To(Succeed())
 
 			phpLayer := f.Build.Layers.Layer(Dependency)
@@ -158,26 +164,12 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			Expect(string(buf)).To(ContainSubstring("-DFOREGROUND"))
 		})
 
-		it("starts a web app with a custom webdir", func() {
-			c.buildpackYAML.Config.WebServer = PhpWebServer
-			c.buildpackYAML.Config.WebDirectory = "public"
-
-			buildDir := filepath.Join(f.Build.Application.Root, c.buildpackYAML.Config.WebDirectory, "index.php")
-			helper.WriteFile(buildDir, 0644, "junk")
-
-			Expect(c.Contribute()).To(Succeed())
-
-			command := fmt.Sprintf("php -S 0.0.0.0:$PORT -t %s/%s", f.Build.Application.Root, "public")
-			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{Type: "task", Command: command, Direct: false},
-					{Type: "web", Command: command, Direct: false},
-				},
-			}))
-		})
-
 		it("starts a web app with NGINX", func() {
-			c.buildpackYAML.Config.WebServer = Nginx
+			c := CreateTestContributor(config.BuildpackYAML{
+				Config: config.Config{
+					WebServer: config.Nginx,
+				},
+			})
 
 			Expect(c.Contribute()).To(Succeed())
 
@@ -208,25 +200,13 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			Expect(procs.Processes).To(ContainElement(nginxProc))
 		})
 
-		it("contributes php-fpm.conf & includes a user's config", func() {
-			helper.WriteFile(filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), 0644, "")
-
-			layer := f.Build.Layers.Layer(Dependency)
-			err := c.writePhpFpmConf(layer, "")
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(filepath.Join(layer.Root, "etc", "php-fpm.conf")).To(BeARegularFile())
-
-			result, err := ioutil.ReadFile(filepath.Join(layer.Root, "etc", "php-fpm.conf"))
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(string(result)).To(ContainSubstring(fmt.Sprintf(`include=%s`, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "*.conf"))))
-		})
-
 		when("the requested web server is not supported", func() {
 			it("does not provide a start command", func() {
-				c.buildpackYAML.Config.WebServer = "notsupportedserver"
-
+				c := CreateTestContributor(config.BuildpackYAML{
+					Config: config.Config{
+						WebServer: "notsupportedserver",
+					},
+				})
 				Expect(c.Contribute()).To(Succeed())
 
 				phpLayer := f.Build.Layers.Layer(Dependency)
@@ -244,7 +224,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			})
 
 			it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
-				c.buildpackYAML.Config.WebServer = PhpWebServer
+				c := CreateTestContributor(config.BuildpackYAML{
+					Config: config.Config{
+						WebServer: config.PhpWebServer,
+					},
+				})
 
 				layer := f.Build.Layers.Layer(Dependency)
 				Expect(c.Contribute()).To(Succeed())
@@ -254,7 +238,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			})
 
 			it("contributes a httpd.conf & php-fpm.conf file when using Apache Web Server", func() {
-				c.buildpackYAML.Config.WebServer = ApacheHttpd
+				c := CreateTestContributor(config.BuildpackYAML{
+					Config: config.Config{
+						WebServer: config.ApacheHttpd,
+					},
+				})
 
 				layer := f.Build.Layers.Layer(Dependency)
 				Expect(c.Contribute()).To(Succeed())
@@ -263,7 +251,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 			})
 
 			it("contributes a nginx.conf & php-fpm.conf file when using Nginx", func() {
-				c.buildpackYAML.Config.WebServer = Nginx
+				c := CreateTestContributor(config.BuildpackYAML{
+					Config: config.Config{
+						WebServer: config.Nginx,
+					},
+				})
 
 				layer := f.Build.Layers.Layer(Dependency)
 				Expect(c.Contribute()).To(Succeed())
@@ -274,6 +266,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 		when("it's not a web app", func() {
 			it("contributes a php.ini file & configures PHP to look at it for a script", func() {
+				c := CreateTestContributor(config.BuildpackYAML{})
 				layer := f.Build.Layers.Layer(Dependency)
 				Expect(c.Contribute()).To(Succeed())
 				Expect(filepath.Join(layer.Root, "etc", "php.ini")).To(BeARegularFile())
@@ -291,6 +284,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 				err := helper.WriteFile(scriptName, 0655, "")
 				Expect(err).ToNot(HaveOccurred())
 
+				c := CreateTestContributor(config.BuildpackYAML{})
 				Expect(c.contributeScript(f.Build.Layers.Layer(fmt.Sprintf("layer-%s", script)))).To(Succeed())
 
 				command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, script)
@@ -306,8 +300,11 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a script using custom script path/name", func() {
-			c.buildpackYAML.Config.Script = "relative/path/to/my/script.php"
-
+			c := CreateTestContributor(config.BuildpackYAML{
+				Config: config.Config{
+					Script: "relative/path/to/my/script.php",
+				},
+			})
 			Expect(c.Contribute()).To(Succeed())
 
 			command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "relative/path/to/my/script.php")
@@ -320,6 +317,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("logs a warning when start script does not exist", func() {
+			c := CreateTestContributor(config.BuildpackYAML{})
+
 			debug := &bytes.Buffer{}
 			info := &bytes.Buffer{}
 

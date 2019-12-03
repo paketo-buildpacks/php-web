@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudfoundry/libcfbuildpack/layers"
+
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/services"
 )
@@ -40,7 +42,7 @@ func (r RedisFeature) IsNeeded() bool {
 }
 
 // EnableFeature will turn on Redis session storage for PHP
-func (r RedisFeature) EnableFeature() error {
+func (r RedisFeature) EnableFeature(_ layers.Layers, _ layers.Layer) error {
 	buf := bytes.Buffer{}
 
 	// turn on redis & igbinary extensions (redis needs igbinary)

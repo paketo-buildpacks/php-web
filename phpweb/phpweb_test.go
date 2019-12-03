@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry/php-dist-cnb/php"
+	"github.com/cloudfoundry/php-web-cnb/config"
 
 	bp "github.com/buildpack/libbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
@@ -50,12 +51,12 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("defaults `php.webdir` to `htdocs`", func() {
-			Expect(PickWebDir(BuildpackYAML{})).To(Equal("htdocs"))
+			Expect(PickWebDir(config.BuildpackYAML{})).To(Equal("htdocs"))
 		})
 
 		it("loads `php.webdirectory` from `buildpack.yml`", func() {
-			buildpackYAML := BuildpackYAML{
-				Config: Config{
+			buildpackYAML := config.BuildpackYAML{
+				Config: config.Config{
 					WebDirectory: "public",
 				},
 			}
@@ -93,58 +94,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 
 	})
 
-	when("buildpack.yml", func() {
-		var f *test.DetectFactory
-
-		it.Before(func() {
-			f = test.NewDetectFactory(t)
-		})
-
-		it("can load an empty buildpack.yaml", func() {
-			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), "")
-
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
-
-			Expect(err).To(Succeed())
-			Expect(loaded).To(Equal(BuildpackYAML{
-				Config{
-					Version:      "",
-					WebServer:    "httpd",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@localhost",
-					Redis: Redis{
-						SessionStoreServiceName: "redis-sessions",
-					},
-				},
-			}))
-		})
-
-		it("can load a version & web server", func() {
-			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com'}}"
-			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
-
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
-			actual := BuildpackYAML{
-				Config: Config{
-					Version:      "1.0.0",
-					WebServer:    "httpd",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@example.com",
-					Redis: Redis{
-						SessionStoreServiceName: "redis-sessions",
-					},
-				},
-			}
-
-			Expect(err).To(Succeed())
-			Expect(loaded).To(Equal(actual))
-		})
-	})
-
 	when("we need a list of PHP extensions", func() {
 		var f *test.BuildFactory
 
@@ -166,30 +115,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			fmt.Println("extensions:", extensions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(extensions)).To(Equal(3))
-		})
-	})
-
-	when("user provides PHP-FPM config", func() {
-		var f *test.BuildFactory
-
-		it.Before(func() {
-			f = test.NewBuildFactory(t)
-		})
-
-		it("detects the folder path", func() {
-			test.WriteFile(t, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), "")
-
-			path, err := GetPhpFpmConfPath(f.Build.Application.Root)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(path).To(Equal(filepath.Join(f.Build.Application.Root, ".php.fpm.d", "*.conf")))
-		})
-
-		it("returns nothing if there are no files", func() {
-			path, err := GetPhpFpmConfPath(f.Build.Application.Root)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(path).To(BeEmpty())
 		})
 	})
 }

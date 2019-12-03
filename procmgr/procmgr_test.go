@@ -1,14 +1,15 @@
 package procmgr
 
 import (
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	. "github.com/onsi/gomega"
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
+	. "github.com/onsi/gomega"
+	"github.com/sclevine/spec"
+	"github.com/sclevine/spec/report"
 )
 
 func TestUnitProcmgrLib(t *testing.T) {
@@ -52,7 +53,7 @@ func testProcmgrLib(t *testing.T, when spec.G, it spec.S) {
 		Expect(procsFile).ToNot(BeARegularFile())
 
 		_, err := ReadProcs(procsFile)
-		Expect(err).To(HaveOccurred())
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	it("should write some procs", func() {
@@ -83,5 +84,112 @@ func testProcmgrLib(t *testing.T, when spec.G, it spec.S) {
 
 		Expect(string(buf)).To(ContainSubstring(`Hello World!`))
 		Expect(string(buf)).To(ContainSubstring(`Good-bye World!`))
+	})
+
+	it("should update a proc", func() {
+		path := filepath.Join(tmp, "procs.yml")
+
+		procs := Procs{
+			Processes: map[string]Proc{
+				"proc1": {
+					Command: "echo",
+					Args:    []string{"'Hello World!"},
+				},
+				"proc2": {
+					Command: "echo",
+					Args:    []string{"'Good-bye World!"},
+				},
+			},
+		}
+
+		Expect(WriteProcs(path, procs)).To(Succeed())
+		Expect(path).To(BeARegularFile())
+
+		procs = Procs{
+			Processes: map[string]Proc{
+				"proc1": {
+					Command: "curl",
+					Args:    []string{"'http://www.google.com"},
+				},
+			},
+		}
+
+		Expect(AppendOrUpdateProcs(path, procs)).To(Succeed())
+
+		file, err := os.Open(path)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		buf, err := ioutil.ReadAll(file)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(buf)).To(ContainSubstring(`http://www.google.com`))
+		Expect(string(buf)).To(ContainSubstring(`Good-bye World!`))
+	})
+
+	it("should append a proc", func() {
+		path := filepath.Join(tmp, "procs.yml")
+
+		procs := Procs{
+			Processes: map[string]Proc{
+				"proc1": {
+					Command: "echo",
+					Args:    []string{"Hello World!"},
+				},
+				"proc2": {
+					Command: "echo",
+					Args:    []string{"Good-bye World!"},
+				},
+			},
+		}
+
+		Expect(WriteProcs(path, procs)).To(Succeed())
+		Expect(path).To(BeARegularFile())
+
+		procs = Procs{
+			Processes: map[string]Proc{
+				"proc3": {
+					Command: "curl",
+					Args:    []string{"'http://www.google.com"},
+				},
+			},
+		}
+
+		Expect(AppendOrUpdateProcs(path, procs)).To(Succeed())
+
+		file, err := os.Open(path)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		buf, err := ioutil.ReadAll(file)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(buf)).To(ContainSubstring(`Hello World!`))
+		Expect(string(buf)).To(ContainSubstring(`Good-bye World!`))
+		Expect(string(buf)).To(ContainSubstring(`http://www.google.com`))
+	})
+
+	it("should just write if no procs.yml exists", func() {
+		path := filepath.Join(tmp, "procs.yml")
+
+		procs := Procs{
+			Processes: map[string]Proc{
+				"proc1": {
+					Command: "curl",
+					Args:    []string{"'http://www.google.com"},
+				},
+			},
+		}
+
+		Expect(AppendOrUpdateProcs(path, procs)).To(Succeed())
+
+		file, err := os.Open(path)
+		Expect(err).NotTo(HaveOccurred())
+		defer file.Close()
+
+		buf, err := ioutil.ReadAll(file)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(buf)).To(ContainSubstring(`http://www.google.com`))
 	})
 }

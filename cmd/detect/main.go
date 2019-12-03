@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/php-web-cnb/config"
+
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
 	"github.com/cloudfoundry/httpd-cnb/httpd"
@@ -76,7 +78,7 @@ func searchForAnyPHPFiles(appRoot string, log logger.Logger) (bool, error) {
 }
 
 func runDetect(context detect.Detect) (int, error) {
-	buildpackYAML, err := phpweb.LoadBuildpackYAML(context.Application.Root)
+	buildpackYAML, err := config.LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return context.Fail(), err
 	}
@@ -118,9 +120,9 @@ func runDetect(context detect.Detect) (int, error) {
 			Metadata: buildplan.Metadata{"launch": true},
 		})
 
-		if webServer == phpweb.PhpWebServer {
+		if webServer == config.PhpWebServer {
 			plan.Provides = append(plan.Provides, buildplan.Provided{
-				Name: phpweb.PhpWebServer,
+				Name: config.PhpWebServer,
 			})
 		}
 	}
@@ -140,7 +142,7 @@ func requiredPHP(version string) buildplan.Required {
 	}
 }
 
-func pickWebServer(bpYaml phpweb.BuildpackYAML) string {
+func pickWebServer(bpYaml config.BuildpackYAML) string {
 	webServer := httpd.Dependency
 	if len(bpYaml.Config.WebServer) > 0 {
 		webServer = bpYaml.Config.WebServer
