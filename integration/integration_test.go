@@ -67,9 +67,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -81,9 +80,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_custom_httpd_cfg", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/status?auto")
@@ -95,8 +93,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: php-server"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using PHP built-in server"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- PHP Web Server"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
@@ -107,9 +104,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_nginx", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -121,9 +117,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_nginx_custom_cfg", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
 			// changed in custom-http.conf

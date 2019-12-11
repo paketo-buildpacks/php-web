@@ -14,17 +14,19 @@ import (
 type PhpWebServerFeature struct {
 	bpYAML config.BuildpackYAML
 	app    application.Application
+	isWebApp bool
 }
 
-func NewPhpWebServerFeature(app application.Application, bpYAML config.BuildpackYAML) PhpWebServerFeature {
+func NewPhpWebServerFeature(featureConfig FeatureConfig) PhpWebServerFeature {
 	return PhpWebServerFeature{
-		bpYAML: bpYAML,
-		app:    app,
+		bpYAML: featureConfig.BpYAML,
+		app:    featureConfig.App,
+		isWebApp: featureConfig.IsWebApp,
 	}
 }
 
 func (p PhpWebServerFeature) IsNeeded() bool {
-	return strings.ToLower(p.bpYAML.Config.WebServer) == config.PhpWebServer
+	return strings.ToLower(p.bpYAML.Config.WebServer) == config.PhpWebServer && p.isWebApp
 }
 
 func (p PhpWebServerFeature) Name() string {

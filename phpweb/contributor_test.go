@@ -17,7 +17,6 @@
 package phpweb
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -32,9 +31,6 @@ import (
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"github.com/cloudfoundry/libcfbuildpack/logger"
-
-	bplogger "github.com/buildpack/libbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
@@ -115,7 +111,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			httpdProc := procmgr.Proc{
 				Command: "httpd",
-				Args:    []string{"-f", filepath.Join(c.application.Root, "httpd.conf"), "-k", "start", "-DFOREGROUND"},
+				Args:    []string{"-f", filepath.Join(f.Build.Application.Root, "httpd.conf"), "-k", "start", "-DFOREGROUND"},
 			}
 
 			Expect(procs.Processes).To(ContainElement(phpFpmProc))
@@ -123,6 +119,8 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("starts a web app and defaults to Apache Web Server", func() {
+			test.WriteFile(t, filepath.Join(f.Build.Application.Root, "htdocs", "index.php"), "")
+
 			c := CreateTestContributor(config.BuildpackYAML{
 				Config: config.Config{
 					WebServer: config.ApacheHttpd,
@@ -193,7 +191,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 
 			nginxProc := procmgr.Proc{
 				Command: "nginx",
-				Args:    []string{"-p", c.application.Root, "-c", filepath.Join(c.application.Root, "nginx.conf")},
+				Args:    []string{"-p", f.Build.Application.Root, "-c", filepath.Join(f.Build.Application.Root, "nginx.conf")},
 			}
 
 			Expect(procs.Processes).To(ContainElement(phpFpmProc))
@@ -276,57 +274,6 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("starting a PHP script", func() {
-		it("starts a script using default `app.php`", func() {
 
-			for _, script := range DefaultCliScripts {
-				scriptName := filepath.Join(f.Build.Application.Root, script)
-				err := helper.WriteFile(scriptName, 0655, "")
-				Expect(err).ToNot(HaveOccurred())
-
-				c := CreateTestContributor(config.BuildpackYAML{})
-				Expect(c.contributeScript(f.Build.Layers.Layer(fmt.Sprintf("layer-%s", script)))).To(Succeed())
-
-				command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, script)
-				Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-					Processes: []layers.Process{
-						{Type: "task", Command: command, Direct: false},
-						{Type: "web", Command: command, Direct: false},
-					},
-				}))
-
-				os.Remove(scriptName)
-			}
-		})
-
-		it("starts a script using custom script path/name", func() {
-			c := CreateTestContributor(config.BuildpackYAML{
-				Config: config.Config{
-					Script: "relative/path/to/my/script.php",
-				},
-			})
-			Expect(c.Contribute()).To(Succeed())
-
-			command := fmt.Sprintf("php %s/%s", f.Build.Application.Root, "relative/path/to/my/script.php")
-			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{Type: "task", Command: command, Direct: false},
-					{Type: "web", Command: command, Direct: false},
-				},
-			}))
-		})
-
-		it("logs a warning when start script does not exist", func() {
-			c := CreateTestContributor(config.BuildpackYAML{})
-
-			debug := &bytes.Buffer{}
-			info := &bytes.Buffer{}
-
-			c.logger = logger.Logger{Logger: bplogger.NewLogger(debug, info)}
-
-			Expect(c.Contribute()).To(Succeed())
-			Expect(info.String()).To(ContainSubstring("Buildpack could not find a file to execute. Either set php.script in buildpack.yml or include one of these files [app.php, main.php, run.php, start.php]"))
-		})
-	})
 
 }

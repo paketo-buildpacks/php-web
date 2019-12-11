@@ -12,11 +12,13 @@ import (
 type ProcMgrFeature struct {
 	bpYAML      config.BuildpackYAML
 	procMgrPath string
+	isWebApp bool
 }
 
-func NewProcMgrFeature(procMgrPath string, bpYAML config.BuildpackYAML) ProcMgrFeature {
+func NewProcMgrFeature(featureConfig FeatureConfig, procMgrPath string) ProcMgrFeature {
 	return ProcMgrFeature{
-		bpYAML:      bpYAML,
+		bpYAML:      featureConfig.BpYAML,
+		isWebApp:   featureConfig.IsWebApp,
 		procMgrPath: procMgrPath,
 	}
 }

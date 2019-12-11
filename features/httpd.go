@@ -13,20 +13,23 @@ import (
 	"github.com/cloudfoundry/php-web-cnb/config"
 )
 
+
 type HttpdFeature struct {
 	bpYAML config.BuildpackYAML
 	app    application.Application
+	isWebApp bool
 }
 
-func NewHttpdFeature(app application.Application, bpYAML config.BuildpackYAML) HttpdFeature {
+func NewHttpdFeature(featureConfig FeatureConfig) HttpdFeature {
 	return HttpdFeature{
-		bpYAML: bpYAML,
-		app:    app,
+		bpYAML: featureConfig.BpYAML,
+		app:    featureConfig.App,
+		isWebApp: featureConfig.IsWebApp,
 	}
 }
 
 func (p HttpdFeature) IsNeeded() bool {
-	return strings.ToLower(p.bpYAML.Config.WebServer) == config.ApacheHttpd
+	return strings.ToLower(p.bpYAML.Config.WebServer) == config.ApacheHttpd && p.isWebApp
 }
 
 func (p HttpdFeature) Name() string {

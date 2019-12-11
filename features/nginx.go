@@ -13,17 +13,19 @@ import (
 type NginxFeature struct {
 	bpYAML config.BuildpackYAML
 	app    application.Application
+	isWebApp bool
 }
 
-func NewNginxFeature(app application.Application, bpYAML config.BuildpackYAML) NginxFeature {
+func NewNginxFeature(featureConfig FeatureConfig) NginxFeature {
 	return NginxFeature{
-		bpYAML: bpYAML,
-		app:    app,
+		bpYAML: featureConfig.BpYAML,
+		app:    featureConfig.App,
+		isWebApp: featureConfig.IsWebApp,
 	}
 }
 
 func (p NginxFeature) IsNeeded() bool {
-	return strings.ToLower(p.bpYAML.Config.WebServer) == config.Nginx
+	return strings.ToLower(p.bpYAML.Config.WebServer) == config.Nginx && p.isWebApp
 }
 
 func (p NginxFeature) Name() string {

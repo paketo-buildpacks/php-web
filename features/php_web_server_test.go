@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpack/libbuildpack/application"
-
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
 	"github.com/cloudfoundry/php-web-cnb/config"
@@ -37,17 +35,55 @@ func testPhpWebServer(t *testing.T, when spec.G, it spec.S) {
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
 			p = features.NewPhpWebServerFeature(
-				factory.Build.Application,
-				config.BuildpackYAML{Config: config.Config{
-					WebServer:    config.PhpWebServer,
-					WebDirectory: "some-dir",
-				}},
+				features.FeatureConfig{
+					App: factory.Build.Application,
+					BpYAML: config.BuildpackYAML{Config: config.Config{
+						WebServer:    config.PhpWebServer,
+						WebDirectory: "some-dir",
+					}},
+					IsWebApp: true,
+				},
 			)
 		})
 
-		it("is detected when php web server requested", func() {
-			Expect(factory).NotTo(BeNil())
-			Expect(p.IsNeeded()).To(BeTrue())
+		when("checking if IsNeeded", func() {
+			when("and we have a web app and php web has been requested", func() {
+				it("is true", func() {
+					test.WriteFile(t, filepath.Join(factory.Build.Application.Root, "some-dir", "index.php"), "")
+
+					Expect(factory).NotTo(BeNil())
+					Expect(p.IsNeeded()).To(BeTrue())
+				})
+			})
+
+			when("and php web has not been requested", func() {
+				it("is false", func() {
+					p = features.NewPhpWebServerFeature(
+						features.FeatureConfig{
+							BpYAML:   config.BuildpackYAML{Config: config.Config{
+								WebServer:   "some-other-webserver",
+								WebDirectory: "some-dir",
+							}},
+							App:      factory.Build.Application,
+							IsWebApp: true,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
+
+			when("and it is not a web app", func() {
+				it("is false", func() {
+					p = features.NewPhpWebServerFeature(
+						features.FeatureConfig {
+							BpYAML: config.BuildpackYAML{Config: config.Config{}},
+							App: factory.Build.Application,
+							IsWebApp: false,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
 		})
 
 		it("sets start command on the layers object", func() {
@@ -63,17 +99,6 @@ func testPhpWebServer(t *testing.T, when spec.G, it spec.S) {
 					{Type: "web", Command: expectedCommand, Direct: false},
 				},
 			}))
-		})
-
-		it("php web server is not present", func() {
-			p = features.NewPhpWebServerFeature(
-				application.Application{},
-				config.BuildpackYAML{Config: config.Config{
-					WebServer:    "some-other-webserver",
-					WebDirectory: "some-dir",
-				}},
-			)
-			Expect(p.IsNeeded()).To(BeFalse())
 		})
 
 	})

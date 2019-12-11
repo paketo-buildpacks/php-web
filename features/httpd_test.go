@@ -7,8 +7,6 @@ import (
 
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
 
-	"github.com/buildpack/libbuildpack/application"
-
 	"github.com/cloudfoundry/php-web-cnb/config"
 	"github.com/cloudfoundry/php-web-cnb/features"
 
@@ -37,18 +35,59 @@ func testHttpd(t *testing.T, when spec.G, it spec.S) {
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
 			p = features.NewHttpdFeature(
-				factory.Build.Application,
-				config.BuildpackYAML{Config: config.Config{
+				features.FeatureConfig {
+				BpYAML: config.BuildpackYAML{Config: config.Config{
 					WebServer:    config.ApacheHttpd,
 					WebDirectory: "some-dir",
 					ServerAdmin:  "my-admin@example.com",
 				}},
+					App: factory.Build.Application,
+					IsWebApp: true,
+				},
 			)
 		})
 
-		it("is detected when Apache web server requested", func() {
-			Expect(factory).NotTo(BeNil())
-			Expect(p.IsNeeded()).To(BeTrue())
+		when("checking if IsNeeded", func() {
+			when("and we have a web app and HTTPD has been requested", func() {
+				it("is true", func() {
+					test.WriteFile(t, filepath.Join(factory.Build.Application.Root, "some-dir", "index.php"), "")
+
+					Expect(factory).NotTo(BeNil())
+					Expect(p.IsNeeded()).To(BeTrue())
+				})
+			})
+
+			when("and Apache web server has not been requested", func() {
+				it("is false", func() {
+					p = features.NewHttpdFeature(
+						features.FeatureConfig{
+							BpYAML: config.BuildpackYAML{Config: config.Config{
+								WebServer:    "some-other-webserver",
+								WebDirectory: "some-dir",
+								ServerAdmin:  "my-admin@example.com",
+							}},
+							App:      factory.Build.Application,
+							IsWebApp: true,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
+
+			when("and it is not a web app", func() {
+				it("is false", func() {
+					p = features.NewHttpdFeature(
+						features.FeatureConfig {
+							BpYAML: config.BuildpackYAML{Config: config.Config{
+								WebServer: config.ApacheHttpd,
+							}},
+							App: factory.Build.Application,
+							IsWebApp: false,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
 		})
 
 		it("sets start command on the layers object", func() {
@@ -76,17 +115,5 @@ func testHttpd(t *testing.T, when spec.G, it spec.S) {
 				},
 			}))
 		})
-
-		it("Apache web server is not present", func() {
-			p = features.NewHttpdFeature(
-				application.Application{},
-				config.BuildpackYAML{Config: config.Config{
-					WebServer:    "some-other-webserver",
-					WebDirectory: "some-dir",
-				}},
-			)
-			Expect(p.IsNeeded()).To(BeFalse())
-		})
-
 	})
 }

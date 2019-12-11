@@ -188,4 +188,34 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(loaded).To(Equal(actual))
 		})
 	})
+
+	when("checking for a web app", func() {
+		it("defaults `php.webdir` to `htdocs`", func() {
+			Expect(PickWebDir(BuildpackYAML{})).To(Equal("htdocs"))
+		})
+
+		it("loads `php.webdirectory` from `buildpack.yml`", func() {
+			buildpackYAML := BuildpackYAML{
+				Config: Config{
+					WebDirectory: "public",
+				},
+			}
+
+			Expect(PickWebDir(buildpackYAML)).To(Equal("public"))
+		})
+
+		it("finds a web app under `<webdir>/*.php`", func() {
+			test.WriteFile(t, filepath.Join(f.Build.Application.Root, "htdocs", "index.php"), "")
+			found, err := SearchForWebApp(f.Build.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeTrue())
+		})
+
+		it("doesn't find a web app under `<webdir>/*.php`", func() {
+			found, err := SearchForWebApp(f.Build.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeFalse())
+		})
+
+	})
 }

@@ -1,13 +1,15 @@
-package features
+package features_test
 
 import (
+	"github.com/cloudfoundry/libcfbuildpack/services"
+	"github.com/cloudfoundry/php-web-cnb/config"
+	"github.com/cloudfoundry/php-web-cnb/features"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
-	"github.com/buildpack/libbuildpack/services"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -19,23 +21,30 @@ func TestUnitRedis(t *testing.T) {
 }
 
 func testRedis(t *testing.T, when spec.G, it spec.S) {
+
+	var (
+		factory *test.BuildFactory
+	)
+
 	it.Before(func() {
 		RegisterTestingT(t)
 	})
 
-	when("redis is present", func() {
-		var (
-			factory *test.BuildFactory
-			r       RedisFeature
+	redisFeatureFactory := func(svcs services.Services) features.RedisFeature {
+		return features.NewRedisFeature(
+			features.FeatureConfig{
+				BpYAML:   config.BuildpackYAML{},
+				App:      factory.Build.Application,
+				IsWebApp: true,
+			},
+			svcs,
+			"redis-sessions",
 		)
+	}
 
+	when("redis is present", func() {
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
-			r = NewRedisFeature(
-				factory.Build.Application,
-				factory.Build.Services,
-				"redis-sessions",
-			)
 		})
 
 		it("is detected when name is `redis`", func() {
@@ -43,7 +52,7 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			})
-			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
+			r := redisFeatureFactory(factory.Build.Services)
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
@@ -53,7 +62,7 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			}, "redis")
-			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
+			r := redisFeatureFactory(factory.Build.Services)
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
@@ -63,17 +72,19 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"username": "fake1",
 				"password": "fake2",
 			})
-			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
+			r := redisFeatureFactory(factory.Build.Services)
 
 			Expect(r.IsNeeded()).To(BeTrue())
 		})
 
 		it("is enabled with defaults", func() {
 			layer := factory.Build.Layers.Layer("layer-1")
+			r := redisFeatureFactory(factory.Build.Services)
+
 			err := r.EnableFeature(layers.Layers{}, layer)
 			Expect(err).ToNot(HaveOccurred())
 
-			iniPath := filepath.Join(r.appRoot, ".php.ini.d", "redis-sessions.ini")
+			iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "redis-sessions.ini")
 			Expect(iniPath).To(BeARegularFile())
 
 			contents, err := ioutil.ReadFile(iniPath)
@@ -91,13 +102,13 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 				"port":     65309,
 				"password": "fake!@#$%^&*()-={]}[?><,./;':",
 			})
-			r.services = factory.Build.Services // we must do this because we added a service after `Before(..)`
+			r := redisFeatureFactory(factory.Build.Services)
 
 			layer := factory.Build.Layers.Layer("layer-1")
 			err := r.EnableFeature(layers.Layers{}, layer)
 			Expect(err).ToNot(HaveOccurred())
 
-			iniPath := filepath.Join(r.appRoot, ".php.ini.d", "redis-sessions.ini")
+			iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "redis-sessions.ini")
 			Expect(iniPath).To(BeARegularFile())
 
 			contents, err := ioutil.ReadFile(iniPath)
@@ -111,14 +122,12 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("redis isn't present", func() {
-		var factory *test.BuildFactory
-
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
 		})
 
 		it("is not detected", func() {
-			r := RedisFeature{services: factory.Build.Services}
+			r := redisFeatureFactory(factory.Build.Services)
 			Expect(r.IsNeeded()).To(BeFalse())
 		})
 	})

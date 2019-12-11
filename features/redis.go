@@ -10,7 +10,6 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
-	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/services"
 )
 
@@ -22,9 +21,9 @@ type RedisFeature struct {
 }
 
 // NewRedisFeature an object that Supports Redis
-func NewRedisFeature(app application.Application, srvs services.Services, serviceKey string) RedisFeature {
+func NewRedisFeature(featureConfig FeatureConfig, srvs services.Services, serviceKey string) RedisFeature {
 	return RedisFeature{
-		appRoot:    app.Root,
+		appRoot:    featureConfig.App.Root,
 		services:   srvs,
 		serviceKey: serviceKey,
 	}

@@ -25,65 +25,91 @@ func TestUnitProcMgr(t *testing.T) {
 }
 
 func testProcMgr(t *testing.T, when spec.G, it spec.S) {
+	var (
+		factory *test.BuildFactory
+		p       features.ProcMgrFeature
+	)
+
 	it.Before(func() {
 		RegisterTestingT(t)
+		factory = test.NewBuildFactory(t)
 	})
 
-	when("php web server is present", func() {
-		var (
-			factory *test.BuildFactory
-			p       features.ProcMgrFeature
-		)
-
-		it.Before(func() {
-			factory = test.NewBuildFactory(t)
-			p = features.NewProcMgrFeature(
-				filepath.Join(factory.Build.Buildpack.Root, "procMgr"),
-				config.BuildpackYAML{Config: config.Config{
-					WebServer: config.ApacheHttpd,
-				}},
-			)
-		})
-
-		when("IsNeeded", func() {
-			it("is detected when httpd requested", func() {
-				Expect(factory).NotTo(BeNil())
-				Expect(p.IsNeeded()).To(BeTrue())
-			})
-
-			it("is detected when nginx requested", func() {
+	when("ProcMgr is present", func() {
+		when("some other web server is requested", func() {
+			it("is false", func() {
 				p = features.NewProcMgrFeature(
+					features.FeatureConfig{
+						BpYAML: config.BuildpackYAML{Config: config.Config{
+							WebServer: "other-webserver",
+						}},
+					},
 					"",
-					config.BuildpackYAML{Config: config.Config{
-						WebServer: config.Nginx,
-					}},
-				)
-
-				Expect(factory).NotTo(BeNil())
-				Expect(p.IsNeeded()).To(BeTrue())
-			})
-
-			it("is not detected for some other webserver", func() {
-				p = features.NewProcMgrFeature(
-					"",
-					config.BuildpackYAML{Config: config.Config{
-						WebServer: "other-webserver",
-					}},
 				)
 
 				Expect(factory).NotTo(BeNil())
 				Expect(p.IsNeeded()).To(BeFalse())
 			})
 		})
+
+		for _, webServer := range []string{config.Nginx, config.ApacheHttpd} {
+			when(fmt.Sprintf("using web server %s", webServer), func() {
+				it.Before(func() {
+					p = features.NewProcMgrFeature(
+						features.FeatureConfig{
+							BpYAML: config.BuildpackYAML{Config: config.Config{
+								WebServer: webServer,
+							}},
+							App:      factory.Build.Application,
+							IsWebApp: true,
+						},
+						filepath.Join(factory.Build.Buildpack.Root, "procMgr"),
+					)
+				})
+
+				when("checking if IsNeeded", func() {
+					when(fmt.Sprintf("and we have a web app and has webserver %s", webServer), func() {
+						it("is true", func() {
+							Expect(factory).NotTo(BeNil())
+							Expect(p.IsNeeded()).To(BeTrue())
+						})
+					})
+
+					when("and it is not a web app", func() {
+						it("is false", func() {
+							p = features.NewProcMgrFeature(
+								features.FeatureConfig{
+									BpYAML:   config.BuildpackYAML{Config: config.Config{}},
+									App:      factory.Build.Application,
+									IsWebApp: false,
+								},
+								"",
+							)
+							Expect(p.IsNeeded()).To(BeFalse())
+						})
+					})
+				})
+			})
+		}
+
 		when("EnableFeature", func() {
 			it("installs itself and adds procs", func() {
-
 				currentLayer := factory.Build.Layers.Layer("layer-1")
+				procMgrPath := filepath.Join(factory.Build.Buildpack.Root, "procMgr")
 
-				Expect(helper.WriteFile(
-					filepath.Join(factory.Build.Buildpack.Root, "procMgr"),
-					os.ModePerm,
-					"some content")).To(Succeed())
+				p = features.NewProcMgrFeature(
+					features.FeatureConfig{
+						BpYAML: config.BuildpackYAML{Config: config.Config{
+							WebServer: config.ApacheHttpd,
+						}},
+						App:      factory.Build.Application,
+						IsWebApp: true,
+					},
+					procMgrPath,
+				)
+
+				Expect(helper.WriteFile(procMgrPath, os.ModePerm,"some content")).To(Succeed())
+
 				Expect(p.EnableFeature(factory.Build.Layers, currentLayer)).To(Succeed())
 
 				Expect(filepath.Join(currentLayer.Root, "bin", "procmgr")).To(BeARegularFile())

@@ -13,12 +13,14 @@ import (
 type PhpFpmFeature struct {
 	bpYAML config.BuildpackYAML
 	app    application.Application
+	isWebApp bool
 }
 
-func NewPhpFpmFeature(app application.Application, bpYAML config.BuildpackYAML) PhpFpmFeature {
+func NewPhpFpmFeature(featureConfig FeatureConfig) PhpFpmFeature {
 	return PhpFpmFeature{
-		bpYAML: bpYAML,
-		app:    app,
+		bpYAML: featureConfig.BpYAML,
+		app:    featureConfig.App,
+		isWebApp: featureConfig.IsWebApp,
 	}
 }
 
@@ -27,10 +29,9 @@ func (p PhpFpmFeature) IsNeeded() bool {
 	serverMap := map[string]bool {
 		config.Nginx: true,
 		config.ApacheHttpd: true,
-		config.PhpWebServer: true,
 	}
 	_, exists := serverMap[serverName]
- 	return exists
+ 	return exists && p.isWebApp
 }
 
 func (p PhpFpmFeature) Name() string {

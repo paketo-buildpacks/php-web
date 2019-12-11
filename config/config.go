@@ -39,6 +39,11 @@ const (
 	PhpWebServer = "php-server"
 )
 
+var (
+	// DefaultCliScripts is the script used when one is not provided in buildpack.yml
+	DefaultCliScripts = []string{"app.php", "main.php", "run.php", "start.php"}
+)
+
 // ProcessTemplateToFile writes out a specific template to the given file name
 func ProcessTemplateToFile(templateBody string, outputPath string, data interface{}) error {
 	template, err := template.New(filepath.Base(outputPath)).Parse(templateBody)
@@ -138,5 +143,30 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 			return BuildpackYAML{}, err
 		}
 	}
+
+	//TODO: valid WebServer
+
 	return buildpackYAML, nil
 }
+
+func PickWebDir(buildpackYAML BuildpackYAML) string {
+	if buildpackYAML.Config.WebDirectory != "" {
+		return buildpackYAML.Config.WebDirectory
+	}
+
+	return "htdocs"
+}
+
+// SearchForWebApp looks to see if this application is a PHP web app
+func SearchForWebApp(appRoot string, webdir string) (bool, error) {
+	matchList, err := filepath.Glob(filepath.Join(appRoot, webdir, "*.php"))
+	if err != nil {
+		return false, err
+	}
+
+	if len(matchList) > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+

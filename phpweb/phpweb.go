@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/libcfbuildpack/layers"
-
 	"github.com/cloudfoundry/php-web-cnb/config"
 
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
@@ -15,11 +13,6 @@ import (
 const (
 	// Dependency in the buildplan indicates that this is a web app
 	Dependency = "php-web"
-)
-
-var (
-	// DefaultCliScripts is the script used when one is not provided in buildpack.yml
-	DefaultCliScripts = []string{"app.php", "main.php", "run.php", "start.php"}
 )
 
 // Version returns the selected version of PHP using the following precedence:
@@ -81,18 +74,4 @@ type Metadata struct {
 // Identity provides libcfbuildpack with information to decide if it should contribute
 func (m Metadata) Identity() (name string, version string) {
 	return m.Name, m.Hash
-}
-
-// Feature is used to add additional features to the CNB
-type Feature interface {
-	// Name of the feature (for debugging purposes)
-	Name() string
-
-	// IsNeeded indicates if this feature is required
-	//   frue will enable the feature
-	//   false means it's skipped
-	IsNeeded() bool
-
-	// EnableFeature will perform the work of enabling the feature
-	EnableFeature(layers layers.Layers, currentLayer layers.Layer) error
 }

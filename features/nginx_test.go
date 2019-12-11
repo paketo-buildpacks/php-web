@@ -2,7 +2,6 @@ package features_test
 
 import (
 	"fmt"
-	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/cloudfoundry/php-web-cnb/config"
 	"github.com/cloudfoundry/php-web-cnb/features"
@@ -34,17 +33,55 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
 			p = features.NewNginxFeature(
-				factory.Build.Application,
-				config.BuildpackYAML{Config: config.Config{
-					WebServer:    config.Nginx,
-					WebDirectory: "some-dir",
-				}},
+				features.FeatureConfig{
+					BpYAML:   config.BuildpackYAML{Config: config.Config{
+						WebServer:    config.Nginx,
+						WebDirectory: "some-dir",
+					}},
+					App:      factory.Build.Application,
+					IsWebApp: true,
+				},
 			)
 		})
 
-		it("is detected when Nginx web server requested", func() {
-			Expect(factory).NotTo(BeNil())
-			Expect(p.IsNeeded()).To(BeTrue())
+		when("checking if IsNeeded", func() {
+			when("and we have a web app and Nginx has been requested", func() {
+				it("is true", func() {
+					test.WriteFile(t, filepath.Join(factory.Build.Application.Root, "some-dir", "index.php"), "")
+
+					Expect(factory).NotTo(BeNil())
+					Expect(p.IsNeeded()).To(BeTrue())
+				})
+			})
+
+			when("and Nginx has not been requested", func() {
+				it("is false", func() {
+					p = features.NewNginxFeature(
+						features.FeatureConfig{
+							BpYAML:   config.BuildpackYAML{Config: config.Config{
+								WebServer:   "some-other-webserver",
+								WebDirectory: "some-dir",
+							}},
+							App:      factory.Build.Application,
+							IsWebApp: true,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
+
+			when("and it is not a web app", func() {
+				it("is false", func() {
+					p = features.NewNginxFeature(
+						features.FeatureConfig {
+							BpYAML: config.BuildpackYAML{Config: config.Config{}},
+							App: factory.Build.Application,
+							IsWebApp: false,
+						},
+					)
+					Expect(p.IsNeeded()).To(BeFalse())
+				})
+			})
 		})
 
 		it("sets start command on the layers object", func() {
@@ -72,17 +109,6 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 					Args:    []string{"-p", factory.Build.Application.Root, "-c", filepath.Join(factory.Build.Application.Root, "nginx.conf")},
 				},
 			}))
-		})
-
-		it("Nginx web server is not present", func() {
-			p = features.NewNginxFeature(
-				application.Application{},
-				config.BuildpackYAML{Config: config.Config{
-					WebServer:    "some-other-webserver",
-					WebDirectory: "some-dir",
-				}},
-			)
-			Expect(p.IsNeeded()).To(BeFalse())
 		})
 
 	})

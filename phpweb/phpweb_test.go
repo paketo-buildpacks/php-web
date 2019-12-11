@@ -22,13 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/php-dist-cnb/php"
-	"github.com/cloudfoundry/php-web-cnb/config"
-
 	bp "github.com/buildpack/libbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -41,42 +39,6 @@ func TestUnitPHPWeb(t *testing.T) {
 func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		RegisterTestingT(t)
-	})
-
-	when("checking for a web app", func() {
-		var factory *test.DetectFactory
-
-		it.Before(func() {
-			factory = test.NewDetectFactory(t)
-		})
-
-		it("defaults `php.webdir` to `htdocs`", func() {
-			Expect(PickWebDir(config.BuildpackYAML{})).To(Equal("htdocs"))
-		})
-
-		it("loads `php.webdirectory` from `buildpack.yml`", func() {
-			buildpackYAML := config.BuildpackYAML{
-				Config: config.Config{
-					WebDirectory: "public",
-				},
-			}
-
-			Expect(PickWebDir(buildpackYAML)).To(Equal("public"))
-		})
-
-		it("finds a web app under `<webdir>/*.php`", func() {
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeTrue())
-		})
-
-		it("doesn't find a web app under `<webdir>/*.php`", func() {
-			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeFalse())
-		})
-
 	})
 
 	when("a version is set", func() {
