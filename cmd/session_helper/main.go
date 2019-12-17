@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("NewRedisSessionSupport:", err)
 	}
-
+	//TODO: enable memcached support
 	err = search.ConfigureService()
 	if err != nil {
 		log.Fatalln("Search:", err)

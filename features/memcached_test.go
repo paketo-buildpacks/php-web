@@ -19,11 +19,11 @@ import (
 	"github.com/sclevine/spec/report"
 )
 
-func TestUnitRedis(t *testing.T) {
-	spec.Run(t, "Redis", testRedis, spec.Report(report.Terminal{}))
+func TestUnitMemcached(t *testing.T) {
+	spec.Run(t, "Memcached", testMemcached, spec.Report(report.Terminal{}))
 }
 
-func testRedis(t *testing.T, when spec.G, it spec.S) {
+func testMemcached(t *testing.T, when spec.G, it spec.S) {
 
 	var (
 		factory *test.BuildFactory
@@ -33,64 +33,64 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 		RegisterTestingT(t)
 	})
 
-	redisFeatureFactory := func(svcs services.Services) features.RedisFeature {
-		return features.NewRedisFeature(
+	memcachedFeatureFactory := func(svcs services.Services) features.MemcachedFeature {
+		return features.NewMemcachedFeature(
 			features.FeatureConfig{
 				BpYAML:   config.BuildpackYAML{},
 				App:      factory.Build.Application,
 				IsWebApp: true,
 			},
 			svcs,
-			"redis-sessions",
+			"memcached-sessions",
 			factory.Build.Platform.Root,
 			filepath.Join(factory.Build.Buildpack.Root, "bin", "session_helper"),
 		)
 	}
 
 	when("IsNeeded", func() {
-		when("redis is present", func() {
+		when("memcached is present", func() {
 			it.Before(func() {
 				factory = test.NewBuildFactory(t)
 			})
 
-			it("is detected when name is `redis`", func() {
-				factory.AddService("redis", services.Credentials{
+			it("is detected when name is `memcached`", func() {
+				factory.AddService("memcached", services.Credentials{
 					"username": "fake1",
 					"password": "fake2",
 				})
-				r := redisFeatureFactory(factory.Build.Services)
+				r := memcachedFeatureFactory(factory.Build.Services)
 
 				Expect(r.IsNeeded()).To(BeTrue())
 			})
 
-			it("is detected when name is not `redis` but there is a `redis` tag", func() {
+			it("is detected when name is not `memcached` but there is a `memcached` tag", func() {
 				factory.AddService("something", services.Credentials{
 					"username": "fake1",
 					"password": "fake2",
-				}, "redis")
-				r := redisFeatureFactory(factory.Build.Services)
+				}, "memcached")
+				r := memcachedFeatureFactory(factory.Build.Services)
 
 				Expect(r.IsNeeded()).To(BeTrue())
 			})
 
-			it("is detected when name is `redis-sessions`", func() {
-				factory.AddService("redis-sessions", services.Credentials{
+			it("is detected when name is `memcached-sessions`", func() {
+				factory.AddService("memcached-sessions", services.Credentials{
 					"username": "fake1",
 					"password": "fake2",
 				})
-				r := redisFeatureFactory(factory.Build.Services)
+				r := memcachedFeatureFactory(factory.Build.Services)
 
 				Expect(r.IsNeeded()).To(BeTrue())
 			})
 		})
 
-		when("redis isn't present", func() {
+		when("memcached isn't present", func() {
 			it.Before(func() {
 				factory = test.NewBuildFactory(t)
 			})
 
 			it("is not detected", func() {
-				r := redisFeatureFactory(factory.Build.Services)
+				r := memcachedFeatureFactory(factory.Build.Services)
 				Expect(r.IsNeeded()).To(BeFalse())
 			})
 		})
@@ -115,7 +115,7 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("writes a profile.d script to run the session_helper", func() {
-			r := redisFeatureFactory(factory.Build.Services)
+			r := memcachedFeatureFactory(factory.Build.Services)
 			Expect(r.EnableFeature(factory.Build.Layers, layer)).To(Succeed())
 
 			sessionHelperFile, err := os.Open(filepath.Join(layer.Root, "bin", "session_helper"))
@@ -134,9 +134,9 @@ func testRedis(t *testing.T, when spec.G, it spec.S) {
 			Expect(string(script)).To(Equal(
 				fmt.Sprintf(`#!/bin/bash
 session_helper \
-  --binding-name "redis-sessions" \
-  --search-term "redis" \
-  --session-driver "redis" \
+  --binding-name "memcached-sessions" \
+  --search-term "memcached" \
+  --session-driver "memcached" \
   --platform-root %q \
   --app-root %q
 `,
@@ -147,19 +147,19 @@ session_helper \
 		})
 	})
 
-	when("RedisSessionSupport", func() {
-		var sessionSupport features.RedisSessionSupport
+	when("MemcachedSessionSupport", func() {
+		var sessionSupport features.MemcachedSessionSupport
 
 		when("FindService", func() {
 			when("there is no given service key", func() {
 				it.Before(func() {
 					factory = test.NewBuildFactory(t)
-					factory.AddService("redis", services.Credentials{
+					factory.AddService("memcached", services.Credentials{
 						"username": "fake1",
 						"password": "fake2",
 					})
 
-					sessionSupport = features.FromExistingRedisSessionSupport(
+					sessionSupport = features.FromExistingMemcachedSessionSupport(
 						features.FeatureConfig{
 							BpYAML:   config.BuildpackYAML{},
 							App:      factory.Build.Application,
@@ -170,7 +170,7 @@ session_helper \
 					)
 				})
 
-				it("finds the credentials for the redis service", func() {
+				it("finds the credentials for the memcached service", func() {
 					service, found := sessionSupport.FindService()
 					Expect(found).To(BeTrue())
 					Expect(service).To(Equal(services.Credentials{
@@ -183,23 +183,23 @@ session_helper \
 			when("there is a service key given", func() {
 				it.Before(func() {
 					factory = test.NewBuildFactory(t)
-					factory.AddService("redis-session", services.Credentials{
+					factory.AddService("memcached-session", services.Credentials{
 						"username": "fake1",
 						"password": "fake2",
 					})
 
-					sessionSupport = features.FromExistingRedisSessionSupport(
+					sessionSupport = features.FromExistingMemcachedSessionSupport(
 						features.FeatureConfig{
 							BpYAML:   config.BuildpackYAML{},
 							App:      factory.Build.Application,
 							IsWebApp: true,
 						},
 						factory.Build.Services,
-						"redis-session",
+						"memcached-session",
 					)
 				})
 
-				it("finds the credentials for the redis service", func() {
+				it("finds the credentials for the memcached service", func() {
 					service, found := sessionSupport.FindService()
 					Expect(found).To(BeTrue())
 					Expect(service).To(Equal(services.Credentials{
@@ -213,18 +213,18 @@ session_helper \
 				it.Before(func() {
 					factory = test.NewBuildFactory(t)
 
-					sessionSupport = features.FromExistingRedisSessionSupport(
+					sessionSupport = features.FromExistingMemcachedSessionSupport(
 						features.FeatureConfig{
 							BpYAML:   config.BuildpackYAML{},
 							App:      factory.Build.Application,
 							IsWebApp: true,
 						},
 						factory.Build.Services,
-						"redis-session",
+						"memcached-session",
 					)
 				})
 
-				it("finds the credentials for the redis service", func() {
+				it("finds the credentials for the memcached service", func() {
 					_, found := sessionSupport.FindService()
 					Expect(found).To(BeFalse())
 				})
@@ -235,68 +235,74 @@ session_helper \
 			when("the service does not contain credentials", func() {
 				it.Before(func() {
 					factory = test.NewBuildFactory(t)
-					factory.AddService("redis-session", services.Credentials{})
+					factory.AddService("memcached-session", services.Credentials{})
 
-					sessionSupport = features.FromExistingRedisSessionSupport(
+					sessionSupport = features.FromExistingMemcachedSessionSupport(
 						features.FeatureConfig{
 							BpYAML:   config.BuildpackYAML{},
 							App:      factory.Build.Application,
 							IsWebApp: true,
 						},
 						factory.Build.Services,
-						"redis-session",
+						"memcached-session",
 					)
 				})
 
 				it("is enabled with defaults", func() {
 					Expect(sessionSupport.ConfigureService()).To(Succeed())
 
-					iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "redis-sessions.ini")
+					iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "memcached-sessions.ini")
 					Expect(iniPath).To(BeARegularFile())
 
 					contents, err := ioutil.ReadFile(iniPath)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(string(contents)).To(ContainSubstring("extension=redis.so"))
-					Expect(string(contents)).To(ContainSubstring("extension=igbinary.so"))
+					Expect(string(contents)).To(ContainSubstring("extension=memcached.so"))
 					Expect(string(contents)).To(ContainSubstring("session.name=PHPSESSIONID"))
-					Expect(string(contents)).To(ContainSubstring("session.save_handler=redis"))
-					Expect(string(contents)).To(ContainSubstring("session.save_path=\"tcp://127.0.0.1:6379\""))
+					Expect(string(contents)).To(ContainSubstring("session.save_handler=memcached"))
+					Expect(string(contents)).To(ContainSubstring(`session.save_path="PERSISTENT=app_sessions 127.0.0.1"`))
+					Expect(string(contents)).To(ContainSubstring("memcached.sess_binary=On"))
+					Expect(string(contents)).To(ContainSubstring("memcached.use_sasl=On"))
+					Expect(string(contents)).To(ContainSubstring("memcached.sess_sasl_username=\"\""))
+					Expect(string(contents)).To(ContainSubstring("memcached.sess_sasl_password=\"\""))
 				})
 			})
 
 			when("the service does contain credentials", func() {
 				it.Before(func() {
 					factory = test.NewBuildFactory(t)
-					factory.AddService("redis-sessions", services.Credentials{
-						"host":     "192.168.0.1",
-						"port":     float64(65309), // simulate how JSON handles numbers as float64
+					factory.AddService("memcached-sessions", services.Credentials{
+						"servers":  "192.168.0.1:1234",
+						"username": "user-1",
 						"password": "fake!@#$%\"^&*()-={]}[?><,./;':",
 					})
 
-					sessionSupport = features.FromExistingRedisSessionSupport(
+					sessionSupport = features.FromExistingMemcachedSessionSupport(
 						features.FeatureConfig{
 							BpYAML:   config.BuildpackYAML{},
 							App:      factory.Build.Application,
 							IsWebApp: true,
 						},
 						factory.Build.Services,
-						"redis-session",
+						"memcached-session",
 					)
 				})
 
 				it("is enabled with service values", func() {
 					Expect(sessionSupport.ConfigureService()).To(Succeed())
 
-					iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "redis-sessions.ini")
+					iniPath := filepath.Join(factory.Build.Application.Root, ".php.ini.d", "memcached-sessions.ini")
 					Expect(iniPath).To(BeARegularFile())
 
 					contents, err := ioutil.ReadFile(iniPath)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(string(contents)).To(ContainSubstring("extension=redis.so"))
-					Expect(string(contents)).To(ContainSubstring("extension=igbinary.so"))
+					Expect(string(contents)).To(ContainSubstring("extension=memcached.so"))
 					Expect(string(contents)).To(ContainSubstring("session.name=PHPSESSIONID"))
-					Expect(string(contents)).To(ContainSubstring("session.save_handler=redis"))
-					Expect(string(contents)).To(ContainSubstring("session.save_path=\"tcp://192.168.0.1:65309?auth=fake%21%40%23%24%25%22%5E%26%2A%28%29-%3D%7B%5D%7D%5B%3F%3E%3C%2C.%2F%3B%27%3A\""))
+					Expect(string(contents)).To(ContainSubstring("session.save_handler=memcached"))
+					Expect(string(contents)).To(ContainSubstring(`session.save_path="PERSISTENT=app_sessions 192.168.0.1:1234"`))
+					Expect(string(contents)).To(ContainSubstring("memcached.sess_binary=On"))
+					Expect(string(contents)).To(ContainSubstring("memcached.use_sasl=On"))
+					Expect(string(contents)).To(ContainSubstring("memcached.sess_sasl_username=\"user-1\""))
+					Expect(string(contents)).To(ContainSubstring(`memcached.sess_sasl_password="fake!@#$%\"^&*()-={]}[?><,./;':"`))
 				})
 			})
 		})

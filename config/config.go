@@ -100,17 +100,23 @@ type BuildpackYAML struct {
 
 // Config represents PHP specific configuration options for BuildpackYAML
 type Config struct {
-	Version      string `yaml:"version"`
-	WebServer    string `yaml:"webserver"`
-	WebDirectory string `yaml:"webdirectory"`
-	LibDirectory string `yaml:"libdirectory"`
-	Script       string `yaml:"script"`
-	ServerAdmin  string `yaml:"serveradmin"`
-	Redis        Redis  `yaml:"redis"`
+	Version      string    `yaml:"version"`
+	WebServer    string    `yaml:"webserver"`
+	WebDirectory string    `yaml:"webdirectory"`
+	LibDirectory string    `yaml:"libdirectory"`
+	Script       string    `yaml:"script"`
+	ServerAdmin  string    `yaml:"serveradmin"`
+	Redis        Redis     `yaml:"redis"`
+	Memcached    Memcached `yaml:"memcached"`
 }
 
 // Redis represents PHP Redis specific configuration options for `buildpack.yml`
 type Redis struct {
+	SessionStoreServiceName string `yaml:"session_store_service_name"`
+}
+
+// Memcached represents PHP Memcached specific configuration options for `buildpack.yml`
+type Memcached struct {
 	SessionStoreServiceName string `yaml:"session_store_service_name"`
 }
 
@@ -123,6 +129,7 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML.Config.WebServer = ApacheHttpd
 	buildpackYAML.Config.ServerAdmin = "admin@localhost"
 	buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
+	buildpackYAML.Config.Memcached.SessionStoreServiceName = "memcached-sessions"
 
 	if exists, err := helper.FileExists(configFile); err != nil {
 		return BuildpackYAML{}, err
@@ -169,4 +176,3 @@ func SearchForWebApp(appRoot string, webdir string) (bool, error) {
 	}
 	return false, nil
 }
-

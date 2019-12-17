@@ -27,3 +27,8 @@ type Feature interface {
 	// EnableFeature will perform the work of enabling the feature
 	EnableFeature(layers layers.Layers, currentLayer layers.Layer) error
 }
+
+// SessionConfigurer is used to generate configuration for session_helper
+type SessionConfigurer interface {
+	ConfigureService() error
+}

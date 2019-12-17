@@ -50,7 +50,13 @@ func CleanUpBps() {
 }
 
 func PreparePhpApp(appName string, buildpacks []string, env map[string]string) (*dagger.App, error) {
-	app, err := dagger.PackBuildWithEnv(filepath.Join("testdata", appName), env, buildpacks...)
+	app, err := dagger.NewPack(
+		filepath.Join("testdata", appName),
+		dagger.RandomImage(),
+		dagger.SetEnv(env),
+		dagger.SetBuildpacks(buildpacks...),
+		dagger.SetVerbose(),
+	).Build()
 	if err != nil {
 		return nil, err
 	}

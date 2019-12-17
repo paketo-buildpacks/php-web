@@ -161,6 +161,9 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 					Redis: Redis{
 						SessionStoreServiceName: "redis-sessions",
 					},
+					Memcached: Memcached{
+						SessionStoreServiceName: "memcached-sessions",
+					},
 				},
 			}))
 		})
@@ -180,6 +183,9 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 					ServerAdmin:  "admin@example.com",
 					Redis: Redis{
 						SessionStoreServiceName: "redis-sessions",
+					},
+					Memcached: Memcached{
+						SessionStoreServiceName: "memcached-sessions",
 					},
 				},
 			}

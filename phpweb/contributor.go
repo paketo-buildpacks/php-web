@@ -83,6 +83,7 @@ func NewContributor(context build.Build) (Contributor, bool, error) {
 			features.NewNginxFeature(featureConfig),
 			features.NewPhpFpmFeature(featureConfig),
 			features.NewRedisFeature(featureConfig, context.Services, buildpackYAML.Config.Redis.SessionStoreServiceName, context.Platform.Root, filepath.Join(context.Buildpack.Root, "bin", "session_helper")),
+			features.NewMemcachedFeature(featureConfig, context.Services, buildpackYAML.Config.Memcached.SessionStoreServiceName, context.Platform.Root, filepath.Join(context.Buildpack.Root, "bin", "session_helper")),
 			features.NewProcMgrFeature(featureConfig, filepath.Join(context.Buildpack.Root, "bin", "procmgr")),
 			features.NewScriptsFeature(featureConfig),
 		},

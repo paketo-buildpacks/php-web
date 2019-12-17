@@ -287,6 +287,52 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(appLogs).To(ContainSubstring("PHP Notice:  session_start(): Redis not available while creating session_id"))
 			Expect(appLogs).To(ContainSubstring("PHP Warning:  session_start(): Failed to read session data"))
 		})
+
+		it.Focus("memcached session support is enabled and data is stored in memcached", func() {
+			env := make(map[string]string)
+			env["CNB_SERVICES"] = `{
+				"Services": [
+					{
+						"binding_name": "memcached-sessions",
+						"credentials": {
+							"servers": "host.docker.internal:60039",
+							"username": "user-1",
+							"password": "passwoRd"
+						},
+						"instance_name": "",
+						"label": "",
+						"plan": "",
+						"tags": null
+					}
+				]
+			}`
+
+			app, err = PreparePhpApp("session_test", []string{phpDistURI, phpWebURI}, env)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = app.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(body).To(ContainSubstring("Memcached Loaded: 1"))
+			Expect(body).To(ContainSubstring("Session Handler: memcached"))
+			Expect(body).To(ContainSubstring("Session Name: PHPSESSIONID"))
+			Expect(body).To(ContainSubstring("Session Save Path: PERSISTENT=app_sessions host.docker.internal:60039"))
+			Expect(body).To(ContainSubstring("Memcached Session Binary: On"))
+			Expect(body).To(ContainSubstring("Memcached Use SASL: On"))
+			Expect(body).To(ContainSubstring("Memcached SASL User: user-1"))
+			Expect(body).To(ContainSubstring("Memcached SASL Pass: passwoRd"))
+
+			_, _, err = app.HTTPGet("/session.php")
+			Expect(err).ToNot(HaveOccurred())
+			appLogs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			fmt.Println("app logs:", appLogs)
+			Expect(appLogs).To(ContainSubstring("PHP Notice:  session_start(): Redis not available while creating session_id"))
+			Expect(appLogs).To(ContainSubstring("PHP Warning:  session_start(): Failed to read session data"))
+		})
 	})
 }
 
