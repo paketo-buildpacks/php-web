@@ -41,7 +41,7 @@ func TestIntegration(t *testing.T) {
 	var err error
 	err = PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
-	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
+	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
 }
 
@@ -57,9 +57,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		if app != nil {
-			app.Destroy()
-		}
+		app.Destroy()
 	})
 
 	when("deploying the simple_app fixture", func() {

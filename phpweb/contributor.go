@@ -32,10 +32,10 @@ import (
 
 // Contributor represents a PHP contribution by the buildpack
 type Contributor struct {
-	layers        layers.Layers
-	logger        logger.Logger
-	metadata      Metadata
-	features      []features.Feature
+	layers   layers.Layers
+	logger   logger.Logger
+	metadata Metadata
+	features []features.Feature
 }
 
 func generateRandomHash() [32]byte {
@@ -65,26 +65,26 @@ func NewContributor(context build.Build) (Contributor, bool, error) {
 		return Contributor{}, false, err
 	}
 
-	featureConfig := features.FeatureConfig {
-		BpYAML: buildpackYAML,
-		App: context.Application,
+	featureConfig := features.FeatureConfig{
+		BpYAML:   buildpackYAML,
+		App:      context.Application,
 		IsWebApp: isWebApp,
-		Logger: context.Logger,
+		Logger:   context.Logger,
 	}
 
 	contributor := Contributor{
-		layers:        context.Layers,
-		logger:        context.Logger,
-		metadata:      Metadata{"PHP Web", hex.EncodeToString(randomHash[:])},
+		layers:   context.Layers,
+		logger:   context.Logger,
+		metadata: Metadata{"PHP Web", hex.EncodeToString(randomHash[:])},
 		features: []features.Feature{
 			features.NewPhpFeature(featureConfig),
-			features.NewProcMgrFeature(featureConfig, filepath.Join(context.Buildpack.Root, "bin", "procmgr")),
 			features.NewPhpWebServerFeature(featureConfig),
 			features.NewHttpdFeature(featureConfig),
 			features.NewNginxFeature(featureConfig),
 			features.NewPhpFpmFeature(featureConfig),
-			features.NewScriptsFeature(featureConfig),
 			features.NewRedisFeature(featureConfig, context.Services, buildpackYAML.Config.Redis.SessionStoreServiceName),
+			features.NewProcMgrFeature(featureConfig, filepath.Join(context.Buildpack.Root, "bin", "procmgr")),
+			features.NewScriptsFeature(featureConfig),
 		},
 	}
 
@@ -111,7 +111,7 @@ func (c Contributor) Contribute() error {
 		}
 
 		return nil
-	})
+	}, c.flags()...)
 }
 
 func (c Contributor) flags() []layers.Flag {
