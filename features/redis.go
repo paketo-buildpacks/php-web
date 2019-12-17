@@ -8,24 +8,38 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudfoundry/libcfbuildpack/helper"
+
+	"github.com/buildpack/libbuildpack/logger"
+	"github.com/buildpack/libbuildpack/platform"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
+	lbservices "github.com/buildpack/libbuildpack/services"
 	"github.com/cloudfoundry/libcfbuildpack/services"
 )
 
+const SessionHelperScript = `#!/bin/bash
+session_helper \
+  --binding-name %q \
+  --search-term %q \
+  --session-driver %q \
+  --platform-root %q \
+  --app-root %q
+`
+
 // RedisFeature is used to enable support for session storage via Redis
 type RedisFeature struct {
-	appRoot    string
-	services   services.Services
-	serviceKey string
+	sessionSupport    RedisSessionSupport
+	platformRoot      string
+	sessionHelperPath string
 }
 
 // NewRedisFeature an object that Supports Redis
-func NewRedisFeature(featureConfig FeatureConfig, srvs services.Services, serviceKey string) RedisFeature {
+func NewRedisFeature(featureConfig FeatureConfig, srvs services.Services, serviceKey, platformRoot, sessionHelperPath string) RedisFeature {
 	return RedisFeature{
-		appRoot:    featureConfig.App.Root,
-		services:   srvs,
-		serviceKey: serviceKey,
+		sessionSupport:    FromExistingRedisSessionSupport(featureConfig, srvs, serviceKey),
+		platformRoot:      platformRoot,
+		sessionHelperPath: sessionHelperPath,
 	}
 }
 
@@ -36,12 +50,72 @@ func (r RedisFeature) Name() string {
 
 // IsNeeded determines if this app needs Redis for storing session data
 func (r RedisFeature) IsNeeded() bool {
-	creds := r.findService()
-	return creds != nil
+	_, found := r.sessionSupport.FindService()
+	return found
 }
 
 // EnableFeature will turn on Redis session storage for PHP
-func (r RedisFeature) EnableFeature(_ layers.Layers, _ layers.Layer) error {
+func (r RedisFeature) EnableFeature(_ layers.Layers, layer layers.Layer) error {
+	err := helper.CopyFile(r.sessionHelperPath, filepath.Join(layer.Root, "bin", "session_helper"))
+	if err != nil {
+		return err
+	}
+
+	err = layer.WriteProfile(
+		"0_session_helper.sh",
+		SessionHelperScript,
+		r.sessionSupport.serviceKey,
+		"redis",
+		"redis",
+		r.platformRoot,
+		r.sessionSupport.appRoot,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RedisSessionSupport provides functionality to locate and configure redis as a session handler
+type RedisSessionSupport struct {
+	appRoot    string
+	services   services.Services
+	serviceKey string
+}
+
+func FromExistingRedisSessionSupport(featureConfig FeatureConfig, srvs services.Services, serviceKey string) RedisSessionSupport {
+	return RedisSessionSupport{
+		appRoot:    featureConfig.App.Root,
+		services:   srvs,
+		serviceKey: serviceKey,
+	}
+}
+
+func NewRedisSessionSupport(platformRoot, appRoot string) (RedisSessionSupport, error) {
+	logger, err := logger.DefaultLogger(platformRoot)
+	if err != nil {
+		return RedisSessionSupport{}, err
+	}
+
+	platform, err := platform.DefaultPlatform(platformRoot, logger)
+	if err != nil {
+		return RedisSessionSupport{}, err
+	}
+
+	defaultServices, err := lbservices.DefaultServices(platform, logger)
+	if err != nil {
+		return RedisSessionSupport{}, err
+	}
+
+	return RedisSessionSupport{
+		appRoot:    appRoot,
+		services:   services.Services{Services: defaultServices},
+		serviceKey: "",
+	}, nil
+}
+
+func (s RedisSessionSupport) ConfigureService() error {
 	buf := bytes.Buffer{}
 
 	// turn on redis & igbinary extensions (redis needs igbinary)
@@ -49,13 +123,13 @@ func (r RedisFeature) EnableFeature(_ layers.Layers, _ layers.Layer) error {
 	buf.WriteString("extension=igbinary.so\n")
 
 	// configure PHP to use redis for sessions
-	savePath := r.formatRedisURL()
+	savePath := s.formatRedisURL()
 	buf.WriteString(fmt.Sprintf("session.name=PHPSESSIONID\n"))
 	buf.WriteString(fmt.Sprintf("session.save_handler=redis\n"))
-	buf.WriteString(fmt.Sprintf("session.save_path=%s\n", savePath))
+	buf.WriteString(fmt.Sprintf("session.save_path=%q\n", savePath))
 
 	// don't use helper.WriteFile because it will mess up the URLencoded values
-	filename := filepath.Join(r.appRoot, ".php.ini.d", "redis-sessions.ini")
+	filename := filepath.Join(s.appRoot, ".php.ini.d", "redis-sessions.ini")
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
 		return err
 	}
@@ -63,22 +137,21 @@ func (r RedisFeature) EnableFeature(_ layers.Layers, _ layers.Layer) error {
 	return ioutil.WriteFile(filename, buf.Bytes(), 0644)
 }
 
-func (r RedisFeature) findService() services.Credentials {
+func (s RedisSessionSupport) FindService() (services.Credentials, bool) {
 	// This is here for backwards compatibility. Previously the buildpack would
 	// look for a service with a specific name or a name given by the user
-	for _, service := range r.services.Services {
-		if service.BindingName == r.serviceKey {
-			return service.Credentials
+	for _, service := range s.services.Services {
+		if service.BindingName == s.serviceKey {
+			return service.Credentials, true
 		}
 	}
 
 	// If not found, we just look for anything providing Redis, to be more flexible, or return nil
-	creds, _ := r.services.FindServiceCredentials("redis")
-	return creds
+	return s.services.FindServiceCredentials("redis")
 }
 
-func (r RedisFeature) formatRedisURL() string {
-	host, port, password := r.loadRedisProps()
+func (s RedisSessionSupport) formatRedisURL() string {
+	host, port, password := s.loadRedisProps()
 	redisURL := fmt.Sprintf("tcp://%s:%d", host, port)
 	if password != "" {
 		redisURL = fmt.Sprintf("%s?auth=%s", redisURL, url.QueryEscape(password))
@@ -86,9 +159,9 @@ func (r RedisFeature) formatRedisURL() string {
 	return redisURL
 }
 
-func (r RedisFeature) loadRedisProps() (host string, port int, password string) {
-	creds := r.findService()
-	if creds != nil {
+func (s RedisSessionSupport) loadRedisProps() (host string, port int, password string) {
+	creds, found := s.FindService()
+	if found {
 		var found bool
 		if host, found = creds["host"].(string); !found {
 			if host, found = creds["hostname"].(string); !found {
@@ -96,7 +169,10 @@ func (r RedisFeature) loadRedisProps() (host string, port int, password string) 
 			}
 		}
 
-		if port, found = creds["port"].(int); !found {
+		credPort, found := creds["port"].(float64)
+		if found {
+			port = int(credPort)
+		} else {
 			port = 6379
 		}
 

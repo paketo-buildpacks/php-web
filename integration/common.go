@@ -49,30 +49,24 @@ func CleanUpBps() {
 	}
 }
 
-// MakeBuildEnv creates a build environment map
-func MakeBuildEnv(debug bool) map[string]string {
-	env := make(map[string]string)
-	if debug {
-		env["BP_DEBUG"] = "true"
-	}
-
-	return env
-}
-
-func PreparePhpApp(appName string, buildpacks []string, debug bool) (*dagger.App, error) {
-	app, err := dagger.PackBuildWithEnv(filepath.Join("testdata", appName), MakeBuildEnv(debug), buildpacks...)
+func PreparePhpApp(appName string, buildpacks []string, env map[string]string) (*dagger.App, error) {
+	app, err := dagger.PackBuildWithEnv(filepath.Join("testdata", appName), env, buildpacks...)
 	if err != nil {
-		return &dagger.App{}, err
+		return nil, err
 	}
 
 	app.SetHealthCheck("", "3s", "1s")
-	app.Env["PORT"] = "8080"
+	if env == nil {
+		env = make(map[string]string)
+	}
+	env["PORT"] = "8080"
+	app.Env = env
 
 	return app, nil
 }
 
 func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, error) {
-	app, err := PreparePhpApp(name, buildpacks, false)
+	app, err := PreparePhpApp(name, buildpacks, nil)
 	if err != nil {
 		return app, err
 	}

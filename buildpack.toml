@@ -7,7 +7,7 @@ version = "{{ .Version }}"
 
 [metadata]
 default_version = "7.2.*"
-include_files = ["bin/build","bin/detect","bin/procmgr","buildpack.toml"]
+include_files = ["bin/build","bin/detect","bin/procmgr","bin/session_helper","buildpack.toml"]
 pre_package = "./scripts/build.sh"
 
 [[stacks]]

@@ -153,7 +153,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying a basic PHP app with extensions", func() {
 		it("loads list of expected extensions", func() {
-			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
@@ -182,7 +182,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying the php_app fixture", func() {
 		it("does not return the version of PHP in the response headers", func() {
-			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -206,7 +206,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("installs our hard-coded default version of PHP", func() {
-			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -229,19 +229,63 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		when("the app is pushed twice", func() {
 			it("does generate php config twice", func() {
 				appName := "php_app"
-				debug := false
-				app, err = PreparePhpApp(appName, []string{phpDistURI, phpWebURI}, false)
+				env := make(map[string]string)
+				env["BP_DEBUG"] = "true"
+
+				app, err = PreparePhpApp(appName, []string{phpDistURI, phpWebURI}, env)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
 
-				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), MakeBuildEnv(debug), []string{phpDistURI, phpWebURI}...)
+				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), env, []string{phpDistURI, phpWebURI}...)
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
 				Expect(app.BuildLogs()).NotTo(MatchRegexp("PHP Web .*: Reusing cached layer"))
 
 				Expect(app.Start()).To(Succeed())
 			})
+		})
+	})
+
+	when("deploying an app with sessions", func() {
+		it("redis session support is enabled and data is stored in redis", func() {
+			env := make(map[string]string)
+			env["CNB_SERVICES"] = `{
+				"Services": [
+					{
+						"binding_name": "redis-sessions",
+						"credentials": {
+							"host": "host.docker.internal",
+							"port": 63009
+						},
+						"instance_name": "",
+						"label": "",
+						"plan": "",
+						"tags": null
+					}
+				]
+			}`
+
+			app, err = PreparePhpApp("session_test", []string{phpDistURI, phpWebURI}, env)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = app.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(body).To(ContainSubstring("Redis Loaded: 1"))
+			Expect(body).To(ContainSubstring("Session Handler: redis"))
+			Expect(body).To(ContainSubstring("Session Name: PHPSESSIONID"))
+			Expect(body).To(ContainSubstring("Session Save Path: tcp://host.docker.internal:63009"))
+
+			_, _, err = app.HTTPGet("/session.php")
+			Expect(err).ToNot(HaveOccurred())
+			appLogs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(appLogs).To(ContainSubstring("PHP Notice:  session_start(): Redis not available while creating session_id"))
+			Expect(appLogs).To(ContainSubstring("PHP Warning:  session_start(): Failed to read session data"))
 		})
 	})
 }
