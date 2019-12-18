@@ -112,8 +112,8 @@ func (c Contributor) contributeWebApp(layer layers.Layer) error {
 
 		return c.layers.WriteApplicationMetadata(layers.Metadata{
 			Processes: []layers.Process{
-				{"web", command, false},
-				{"task", command, false},
+				{Type: "web", Command: command},
+				{Type: "task", Command: command},
 			},
 		})
 	} else if webServerName == ApacheHttpd {
@@ -168,7 +168,7 @@ func (c Contributor) contributeWebServer(layer layers.Layer, name string, webPro
 		return fmt.Errorf("failed to write procs.yml: %s", err)
 	}
 
-	return c.layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf("procmgr %s", procsYaml), false}}})
+	return c.layers.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{Type: "web", Command: fmt.Sprintf("procmgr %s", procsYaml)}}})
 
 }
 
@@ -176,7 +176,6 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 	if err := c.initPhp(layer); err != nil {
 		return err
 	}
-
 
 	if c.buildpackYAML.Config.Script == "" {
 		for _, possible := range DefaultCliScripts {
@@ -203,8 +202,8 @@ func (c Contributor) contributeScript(layer layers.Layer) error {
 
 	return c.layers.WriteApplicationMetadata(layers.Metadata{
 		Processes: []layers.Process{
-			{"web", command, false},
-			{"task", command, false},
+			{Type: "web", Command: command},
+			{Type: "task", Command: command},
 		},
 	})
 }
