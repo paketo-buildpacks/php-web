@@ -38,8 +38,8 @@ github.com/cloudfoundry/libcfbuildpack v1.89.0 h1:A0OXihcHjvDRLYendhfqMxTBVe5pi5
 github.com/cloudfoundry/libcfbuildpack v1.89.0/go.mod h1:ufhp/bp0LxbDDwbf2Ms3Bf4x9YnLr9dkL1RTUYSdKg0=
 github.com/cloudfoundry/libcfbuildpack v1.91.10 h1:H/j6LX2IvyCNMl1kw4E7aKREN6LfQp1iNbAgohx39BE=
 github.com/cloudfoundry/libcfbuildpack v1.91.10/go.mod h1:RUt8TSZRPopo4FqsSrj/bPGClN50CeK8yy3uRo8/Ivo=
-github.com/cloudfoundry/libcfbuildpack v1.91.11 h1:9dKnlAzy42omrbcJxNS5mcuF/kazkjPPiZ0hXXdG2bs=
-github.com/cloudfoundry/libcfbuildpack v1.91.11/go.mod h1:3LGlIqcmqoCn2IvcnmVJrX7e9UfsMazlXE7ovsVR9YE=
+github.com/cloudfoundry/libcfbuildpack v1.91.12 h1:kFKGiv8Rjzr414xthmu1yQBi0TeWnTbkfQLdjgN1KcY=
+github.com/cloudfoundry/libcfbuildpack v1.91.12/go.mod h1:4F4p49m8VgNOa4B2iYv63KJM9ftiE7uxeAKb4MNBGKU=
 github.com/cloudfoundry/packit v0.0.0-20191202164725-43d6fa19d96c h1:sjyfrHBlVjWqMfBIZclmrdI430kcKOjT6+dVgix476c=
 github.com/cloudfoundry/packit v0.0.0-20191202164725-43d6fa19d96c/go.mod h1:FffmDGXYVSrrj9HlFP4XbnJnQi7jHcsElHujPGbfP3U=
 github.com/cloudfoundry/packit v0.0.0-20191213210055-5b63a8a0a976 h1:E4rxxvrT1H3WN63kmOLZ2L4iW2VMm4SHVBRIvW10auA=
@@ -114,6 +114,8 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.7.2-0.20191118193045-1526230ca7de/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoTdcA=
 github.com/onsi/gomega v1.8.0 h1:FSKGa3TlxsiscjlIg6XaJMmJFqd9qYyaLXnyCHjaLsk=
 github.com/onsi/gomega v1.8.0/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoTdcA=
+github.com/onsi/gomega v1.8.1 h1:C5Dqfs/LeauYDX0jJXIe2SWmwCbGzx9yF8C8xy3Lh34=
+github.com/onsi/gomega v1.8.1/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoTdcA=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
