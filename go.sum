@@ -24,8 +24,8 @@ github.com/buildpack/libbuildpack v1.24.5 h1:r7AM7r8ff7ocI1KOopVHEC3EDTCdrj0YeTX
 github.com/buildpack/libbuildpack v1.24.5/go.mod h1:cBmq8aozSDfy+RiKCERQbT6lk0M/Xf3aJWK2PLbPG1g=
 github.com/buildpack/libbuildpack v1.25.6 h1:0iCQSrF0E5dCF6iUo0MmBQRn3bfjhk4BUNNtOpLU/oA=
 github.com/buildpack/libbuildpack v1.25.6/go.mod h1:bdzuJSU1TvfvrSn6evQ/Hr53A6d+8yp3KFSII1/kShE=
-github.com/buildpack/libbuildpack v1.25.7 h1:vCGHBO79dlnopbz3DTQD9FkPQ0b1nEMM7OtTGRmTl5c=
-github.com/buildpack/libbuildpack v1.25.7/go.mod h1:9WwFxe8UUWFyC4+CQxt5poscEryVm8KQaSJdgms7iGk=
+github.com/buildpack/libbuildpack v1.25.8 h1:k7V5ArMvaioh5fCPsxvJ1Q5Svb5rIt6E3E5h9cxkoSc=
+github.com/buildpack/libbuildpack v1.25.8/go.mod h1:l4/s95NP96DffC5A+U7ezwqCF9JNGTnoagqeB+dimSQ=
 github.com/cheggaaa/pb v2.0.7+incompatible/go.mod h1:pQciLPpbU0oxA0h+VJYYLxO+XeDQb5pZijXscXHm81s=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudfoundry/dagger v0.0.0-20191213212648-a45390236bb7 h1:memCTm3ihX25dJhHeflF0l3kt3S7WYr7QN9y7Qk7Sas=
@@ -38,8 +38,8 @@ github.com/cloudfoundry/libcfbuildpack v1.89.0 h1:A0OXihcHjvDRLYendhfqMxTBVe5pi5
 github.com/cloudfoundry/libcfbuildpack v1.89.0/go.mod h1:ufhp/bp0LxbDDwbf2Ms3Bf4x9YnLr9dkL1RTUYSdKg0=
 github.com/cloudfoundry/libcfbuildpack v1.91.10 h1:H/j6LX2IvyCNMl1kw4E7aKREN6LfQp1iNbAgohx39BE=
 github.com/cloudfoundry/libcfbuildpack v1.91.10/go.mod h1:RUt8TSZRPopo4FqsSrj/bPGClN50CeK8yy3uRo8/Ivo=
-github.com/cloudfoundry/libcfbuildpack v1.91.12 h1:kFKGiv8Rjzr414xthmu1yQBi0TeWnTbkfQLdjgN1KcY=
-github.com/cloudfoundry/libcfbuildpack v1.91.12/go.mod h1:4F4p49m8VgNOa4B2iYv63KJM9ftiE7uxeAKb4MNBGKU=
+github.com/cloudfoundry/libcfbuildpack v1.91.13 h1:Opm+/pD3Mxzv0suCijEuQGwSZk2b9TYBl/ypMxIkRZk=
+github.com/cloudfoundry/libcfbuildpack v1.91.13/go.mod h1:w2sZDJ33eE67rvPsxoY4QzcFgO3N3p3fY63UuZo72Ds=
 github.com/cloudfoundry/packit v0.0.0-20191202164725-43d6fa19d96c h1:sjyfrHBlVjWqMfBIZclmrdI430kcKOjT6+dVgix476c=
 github.com/cloudfoundry/packit v0.0.0-20191202164725-43d6fa19d96c/go.mod h1:FffmDGXYVSrrj9HlFP4XbnJnQi7jHcsElHujPGbfP3U=
 github.com/cloudfoundry/packit v0.0.0-20191213210055-5b63a8a0a976 h1:E4rxxvrT1H3WN63kmOLZ2L4iW2VMm4SHVBRIvW10auA=
