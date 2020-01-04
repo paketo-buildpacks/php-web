@@ -24,7 +24,7 @@ github.com/cloudfoundry/dagger
 github.com/cloudfoundry/dagger/utils
 # github.com/cloudfoundry/httpd-cnb v0.0.67
 github.com/cloudfoundry/httpd-cnb/httpd
-# github.com/cloudfoundry/libcfbuildpack v1.91.16
+# github.com/cloudfoundry/libcfbuildpack v1.91.17
 github.com/cloudfoundry/libcfbuildpack/build
 github.com/cloudfoundry/libcfbuildpack/buildpack
 github.com/cloudfoundry/libcfbuildpack/buildpackplan
