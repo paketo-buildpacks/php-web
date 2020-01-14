@@ -1,10 +1,11 @@
 package procmgr
 
 import (
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"gopkg.in/yaml.v2"
 )
 
 // Procs is the list of process names and commands to run
@@ -22,7 +23,11 @@ func ReadProcs(path string) (Procs, error) {
 	procs := Procs{}
 
 	file, err := os.Open(path)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return Procs{
+			Processes: map[string]Proc{},
+		}, nil
+	} else if err != nil {
 		return Procs{}, err
 	}
 	defer file.Close()
@@ -46,4 +51,18 @@ func WriteProcs(path string, procs Procs) error {
 		return err
 	}
 	return helper.WriteFile(path, 0644, string(bytes))
+}
+
+// AppendOrUpdateProcs appends or updates the given procs to the current proc.yml
+func AppendOrUpdateProcs(path string, procs Procs) error {
+	existingProcs, err := ReadProcs(path)
+	if err != nil {
+		return err
+	}
+
+	for name, proc := range procs.Processes {
+		existingProcs.Processes[name] = proc
+	}
+
+	return WriteProcs(path, existingProcs)
 }

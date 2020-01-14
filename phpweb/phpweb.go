@@ -1,33 +1,18 @@
 package phpweb
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/php-web-cnb/config"
+
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
 )
 
 const (
-	// WebDependency in the buildplan indicates that this is a web app
+	// Dependency in the buildplan indicates that this is a web app
 	Dependency = "php-web"
-
-	// Nginx is text user can specify to request Nginx Web Server
-	Nginx = "nginx"
-
-	// ApacheHttpd is text user can specify to request Apache Web Server
-	ApacheHttpd = "httpd"
-
-	// PhpWebServer is text user can specify to use PHP's built-in Web Server
-	PhpWebServer = "php-server"
-)
-
-var (
-	// DefaultCliScript is the script used when one is not provided in buildpack.yml
-	DefaultCliScripts = []string{"app.php", "main.php", "run.php", "start.php"}
 )
 
 // Version returns the selected version of PHP using the following precedence:
@@ -44,52 +29,6 @@ func Version(buildpack buildpack.Buildpack) string {
 	return "*"
 }
 
-// BuildpackYAML represents user specified config options through `buildpack.yml`
-type BuildpackYAML struct {
-	Config Config `yaml:"php"`
-}
-
-// Config represents PHP specific configuration options for BuildpackYAML
-type Config struct {
-	Version      string `yaml:"version"`
-	WebServer    string `yaml:"webserver"`
-	WebDirectory string `yaml:"webdirectory"`
-	LibDirectory string `yaml:"libdirectory"`
-	Script       string `yaml:"script"`
-	ServerAdmin  string `yaml:"serveradmin"`
-}
-
-// LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
-func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
-	buildpackYAML, configFile := BuildpackYAML{}, filepath.Join(appRoot, "buildpack.yml")
-
-	buildpackYAML.Config.LibDirectory = "lib"
-	buildpackYAML.Config.WebDirectory = "htdocs"
-	buildpackYAML.Config.WebServer = ApacheHttpd
-	buildpackYAML.Config.ServerAdmin = "admin@localhost"
-
-	if exists, err := helper.FileExists(configFile); err != nil {
-		return BuildpackYAML{}, err
-	} else if exists {
-		file, err := os.Open(configFile)
-		if err != nil {
-			return BuildpackYAML{}, err
-		}
-		defer file.Close()
-
-		contents, err := ioutil.ReadAll(file)
-		if err != nil {
-			return BuildpackYAML{}, err
-		}
-
-		err = yaml.Unmarshal(contents, &buildpackYAML)
-		if err != nil {
-			return BuildpackYAML{}, err
-		}
-	}
-	return buildpackYAML, nil
-}
-
 // LoadAvailablePHPExtensions locates available extensions and returns the list
 func LoadAvailablePHPExtensions() ([]string, error) {
 	extensions, err := filepath.Glob(filepath.Join(os.Getenv("PHP_EXTENSION_DIR"), "*"))
@@ -104,22 +43,8 @@ func LoadAvailablePHPExtensions() ([]string, error) {
 	return extensions, nil
 }
 
-// GetPhpFpmConfPath will look to see if a user has specified custom PHP-FPM config & if so return the path. Returns an empty string if not specified.
-func GetPhpFpmConfPath(appRoot string) (string, error) {
-	userIncludePath := filepath.Join(appRoot, ".php.fpm.d", "*.conf")
-	matches, err := filepath.Glob(userIncludePath)
-	if err != nil {
-		return "", err
-	}
-	if len(matches) == 0 {
-		userIncludePath = ""
-	}
-
-	return userIncludePath, nil
-}
-
 // PickWebDir will select the correct web directory to use
-func PickWebDir(buildpackYAML BuildpackYAML) string {
+func PickWebDir(buildpackYAML config.BuildpackYAML) string {
 	if buildpackYAML.Config.WebDirectory != "" {
 		return buildpackYAML.Config.WebDirectory
 	}
@@ -140,6 +65,7 @@ func SearchForWebApp(appRoot string, webdir string) (bool, error) {
 	return false, nil
 }
 
+// Metadata is used solely for providing `Identity()`
 type Metadata struct {
 	Name string
 	Hash string

@@ -22,12 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/php-dist-cnb/php"
-
 	bp "github.com/buildpack/libbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -40,42 +39,6 @@ func TestUnitPHPWeb(t *testing.T) {
 func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		RegisterTestingT(t)
-	})
-
-	when("checking for a web app", func() {
-		var factory *test.DetectFactory
-
-		it.Before(func() {
-			factory = test.NewDetectFactory(t)
-		})
-
-		it("defaults `php.webdir` to `htdocs`", func() {
-			Expect(PickWebDir(BuildpackYAML{})).To(Equal("htdocs"))
-		})
-
-		it("loads `php.webdirectory` from `buildpack.yml`", func() {
-			buildpackYAML := BuildpackYAML{
-				Config: Config{
-					WebDirectory: "public",
-				},
-			}
-
-			Expect(PickWebDir(buildpackYAML)).To(Equal("public"))
-		})
-
-		it("finds a web app under `<webdir>/*.php`", func() {
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "htdocs", "index.php"), "")
-			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeTrue())
-		})
-
-		it("doesn't find a web app under `<webdir>/*.php`", func() {
-			found, err := SearchForWebApp(factory.Detect.Application.Root, "htdocs")
-			Expect(err).To(Not(HaveOccurred()))
-			Expect(found).To(BeFalse())
-		})
-
 	})
 
 	when("a version is set", func() {
@@ -91,52 +54,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			Expect(Version(buildpack)).To(Equal("*"))
 		})
 
-	})
-
-	when("buildpack.yml", func() {
-		var f *test.DetectFactory
-
-		it.Before(func() {
-			f = test.NewDetectFactory(t)
-		})
-
-		it("can load an empty buildpack.yaml", func() {
-			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), "")
-
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
-
-			Expect(err).To(Succeed())
-			Expect(loaded).To(Equal(BuildpackYAML{
-				Config{
-					Version:      "",
-					WebServer:    "httpd",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@localhost",
-				},
-			}))
-		})
-
-		it("can load a version & web server", func() {
-			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com'}}"
-			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
-
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
-			actual := BuildpackYAML{
-				Config: Config{
-					Version:      "1.0.0",
-					WebServer:    "httpd",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@example.com",
-				},
-			}
-
-			Expect(err).To(Succeed())
-			Expect(loaded).To(Equal(actual))
-		})
 	})
 
 	when("we need a list of PHP extensions", func() {
@@ -160,30 +77,6 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 			fmt.Println("extensions:", extensions)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(extensions)).To(Equal(3))
-		})
-	})
-
-	when("user provides PHP-FPM config", func() {
-		var f *test.BuildFactory
-
-		it.Before(func() {
-			f = test.NewBuildFactory(t)
-		})
-
-		it("detects the folder path", func() {
-			test.WriteFile(t, filepath.Join(f.Build.Application.Root, ".php.fpm.d", "user.conf"), "")
-
-			path, err := GetPhpFpmConfPath(f.Build.Application.Root)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(path).To(Equal(filepath.Join(f.Build.Application.Root, ".php.fpm.d", "*.conf")))
-		})
-
-		it("returns nothing if there are no files", func() {
-			path, err := GetPhpFpmConfPath(f.Build.Application.Root)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(path).To(BeEmpty())
 		})
 	})
 }

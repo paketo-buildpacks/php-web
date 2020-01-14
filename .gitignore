@@ -4,3 +4,4 @@
 /bin
 *.tgz
 php-web-cnb_*
+.vscode/

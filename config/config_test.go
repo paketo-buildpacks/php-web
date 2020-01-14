@@ -39,99 +39,189 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		f = test.NewBuildFactory(t)
 	})
 
-	it("generates an httpd.conf from the template", func() {
-		cfg := HttpdConfig{
-			AppRoot:      "/app",
-			ServerAdmin:  "test@example.org",
-			WebDirectory: "htdocs",
-			FpmSocket:    "127.0.0.1:9000",
-		}
+	when("config generation", func() {
+		it("generates an httpd.conf from the template", func() {
+			cfg := HttpdConfig{
+				AppRoot:      "/app",
+				ServerAdmin:  "test@example.org",
+				WebDirectory: "htdocs",
+				FpmSocket:    "127.0.0.1:9000",
+			}
 
-		err := ProcessTemplateToFile(HttpdConfTemplate, filepath.Join(f.Home, "httpd.conf"), cfg)
-		Expect(err).ToNot(HaveOccurred())
+			err := ProcessTemplateToFile(HttpdConfTemplate, filepath.Join(f.Home, "httpd.conf"), cfg)
+			Expect(err).ToNot(HaveOccurred())
 
-		result, err := ioutil.ReadFile(filepath.Join(f.Home, "httpd.conf"))
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "httpd.conf"))
 
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(ContainSubstring(`ServerRoot "${SERVER_ROOT}"`))
-		Expect(result).To(ContainSubstring(`ServerAdmin "test@example.org"`))
-		Expect(result).To(ContainSubstring(`DocumentRoot "/app/htdocs"`))
-		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
-		Expect(result).To(ContainSubstring(`<Files ".ht*">`))
-		Expect(result).To(ContainSubstring(`ErrorLog "/proc/self/fd/2"`))
-		Expect(result).To(ContainSubstring(`CustomLog "/proc/self/fd/1" extended`))
-		Expect(result).To(ContainSubstring(`RemoteIpHeader x-forwarded-for`))
-		Expect(result).To(ContainSubstring(`RemoteIpInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16`))
-		Expect(result).To(ContainSubstring(`SetEnvIf x-forwarded-proto https HTTPS=on`))
-		Expect(result).To(ContainSubstring(`Define fcgi-listener fcgi://127.0.0.1:9000/app/htdocs`))
-		Expect(result).To(ContainSubstring(`<Proxy "${fcgi-listener}">`))
-		Expect(result).To(ContainSubstring(`ProxySet disablereuse=On retry=0`))
-		Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
-		Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
-		Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
-		Expect(string(result)).To(ContainSubstring(`IncludeOptional "/app/.httpd.conf.d/*.conf"`))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(ContainSubstring(`ServerRoot "${SERVER_ROOT}"`))
+			Expect(result).To(ContainSubstring(`ServerAdmin "test@example.org"`))
+			Expect(result).To(ContainSubstring(`DocumentRoot "/app/htdocs"`))
+			Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
+			Expect(result).To(ContainSubstring(`<Files ".ht*">`))
+			Expect(result).To(ContainSubstring(`ErrorLog "/proc/self/fd/2"`))
+			Expect(result).To(ContainSubstring(`CustomLog "/proc/self/fd/1" extended`))
+			Expect(result).To(ContainSubstring(`RemoteIpHeader x-forwarded-for`))
+			Expect(result).To(ContainSubstring(`RemoteIpInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16`))
+			Expect(result).To(ContainSubstring(`SetEnvIf x-forwarded-proto https HTTPS=on`))
+			Expect(result).To(ContainSubstring(`Define fcgi-listener fcgi://127.0.0.1:9000/app/htdocs`))
+			Expect(result).To(ContainSubstring(`<Proxy "${fcgi-listener}">`))
+			Expect(result).To(ContainSubstring(`ProxySet disablereuse=On retry=0`))
+			Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
+			Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
+			Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
+			Expect(string(result)).To(ContainSubstring(`IncludeOptional "/app/.httpd.conf.d/*.conf"`))
+		})
+
+		it("generates an nginx.conf from the template", func() {
+			cfg := NginxConfig{
+				AppRoot:      "/app",
+				WebDirectory: "public",
+				FpmSocket:    "/tmp/php-fpm.socket",
+			}
+
+			err := ProcessTemplateToFile(NginxConfTemplate, filepath.Join(f.Home, "nginx.conf"), cfg)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "nginx.conf"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(ContainSubstring(`root               /app/public;`))
+			Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
+			Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
+			Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-server.conf`))
+			Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-http.conf`))
+		})
+
+		it("generates a php.ini from the template", func() {
+			cfg := PhpIniConfig{
+				AppRoot:      "/app",
+				LibDirectory: "lib",
+				PhpHome:      "/php/home",
+				PhpAPI:       "20180101",
+				Extensions: []string{
+					"openssl",
+					"mysql",
+				},
+				ZendExtensions: []string{
+					"xdebug",
+				},
+			}
+
+			err := ProcessTemplateToFile(PhpIniTemplate, filepath.Join(f.Home, "php.ini"), cfg)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "php.ini"))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(ContainSubstring(`include_path = "/php/home/lib/php:/app/lib"`))
+			Expect(result).To(ContainSubstring(`extension_dir = "/php/home/lib/php/extensions/no-debug-non-zts-20180101"`))
+			Expect(result).To(ContainSubstring(`extension = openssl.so`))
+			Expect(result).To(ContainSubstring(`extension = mysql.so`))
+			Expect(result).To(ContainSubstring(`zend_extension = xdebug.so`))
+		})
+
+		it("generates a php-fpm.conf from the template", func() {
+			cfg := PhpFpmConfig{
+				Include: "/php/home/.php-fpm.d/*.conf",
+				Listen:  "127.0.0.1:9000",
+			}
+
+			err := ProcessTemplateToFile(PhpFpmConfTemplate, filepath.Join(f.Home, "php-fpm.conf"), cfg)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "php-fpm.conf"))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(ContainSubstring(`include=/php/home/.php-fpm.d/*.conf`))
+			Expect(result).To(ContainSubstring(`listen = 127.0.0.1:9000`))
+		})
 	})
 
-	it("generates an nginx.conf from the template", func() {
-		cfg := NginxConfig{
-			AppRoot:      "/app",
-			WebDirectory: "public",
-			FpmSocket:    "/tmp/php-fpm.socket",
-		}
+	when("buildpack.yml", func() {
+		var f *test.DetectFactory
 
-		err := ProcessTemplateToFile(NginxConfTemplate, filepath.Join(f.Home, "nginx.conf"), cfg)
-		Expect(err).ToNot(HaveOccurred())
+		it.Before(func() {
+			f = test.NewDetectFactory(t)
+		})
 
-		result, err := ioutil.ReadFile(filepath.Join(f.Home, "nginx.conf"))
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(ContainSubstring(`root               /app/public;`))
-		Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
-		Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
-		Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-server.conf`))
-		Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-http.conf`))
+		it("can load an empty buildpack.yaml", func() {
+			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), "")
+
+			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
+
+			Expect(err).To(Succeed())
+			Expect(loaded).To(Equal(BuildpackYAML{
+				Config{
+					Version:      "",
+					WebServer:    "httpd",
+					WebDirectory: "htdocs",
+					LibDirectory: "lib",
+					Script:       "",
+					ServerAdmin:  "admin@localhost",
+					Redis: Redis{
+						SessionStoreServiceName: "redis-sessions",
+					},
+					Memcached: Memcached{
+						SessionStoreServiceName: "memcached-sessions",
+					},
+				},
+			}))
+		})
+
+		it("can load a version & web server", func() {
+			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com'}}"
+			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
+
+			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
+			actual := BuildpackYAML{
+				Config: Config{
+					Version:      "1.0.0",
+					WebServer:    "httpd",
+					WebDirectory: "htdocs",
+					LibDirectory: "lib",
+					Script:       "",
+					ServerAdmin:  "admin@example.com",
+					Redis: Redis{
+						SessionStoreServiceName: "redis-sessions",
+					},
+					Memcached: Memcached{
+						SessionStoreServiceName: "memcached-sessions",
+					},
+				},
+			}
+
+			Expect(err).To(Succeed())
+			Expect(loaded).To(Equal(actual))
+		})
 	})
 
-	it("generates a php.ini from the template", func() {
-		cfg := PhpIniConfig{
-			AppRoot:      "/app",
-			LibDirectory: "lib",
-			PhpHome:      "/php/home",
-			PhpAPI:       "20180101",
-			Extensions: []string{
-				"openssl",
-				"mysql",
-			},
-			ZendExtensions: []string{
-				"xdebug",
-			},
-		}
+	when("checking for a web app", func() {
+		it("defaults `php.webdir` to `htdocs`", func() {
+			Expect(PickWebDir(BuildpackYAML{})).To(Equal("htdocs"))
+		})
 
-		err := ProcessTemplateToFile(PhpIniTemplate, filepath.Join(f.Home, "php.ini"), cfg)
-		Expect(err).ToNot(HaveOccurred())
+		it("loads `php.webdirectory` from `buildpack.yml`", func() {
+			buildpackYAML := BuildpackYAML{
+				Config: Config{
+					WebDirectory: "public",
+				},
+			}
 
-		result, err := ioutil.ReadFile(filepath.Join(f.Home, "php.ini"))
+			Expect(PickWebDir(buildpackYAML)).To(Equal("public"))
+		})
 
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(ContainSubstring(`include_path = "/php/home/lib/php:/app/lib"`))
-		Expect(result).To(ContainSubstring(`extension_dir = "/php/home/lib/php/extensions/no-debug-non-zts-20180101"`))
-		Expect(result).To(ContainSubstring(`extension = openssl.so`))
-		Expect(result).To(ContainSubstring(`extension = mysql.so`))
-		Expect(result).To(ContainSubstring(`zend_extension = xdebug.so`))
-	})
+		it("finds a web app under `<webdir>/*.php`", func() {
+			test.WriteFile(t, filepath.Join(f.Build.Application.Root, "htdocs", "index.php"), "")
+			found, err := SearchForWebApp(f.Build.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeTrue())
+		})
 
-	it("generates a php-fpm.conf from the template", func() {
-		cfg := PhpFpmConfig{
-			Include: "/php/home/.php-fpm.d/*.conf",
-			Listen:  "127.0.0.1:9000",
-		}
+		it("doesn't find a web app under `<webdir>/*.php`", func() {
+			found, err := SearchForWebApp(f.Build.Application.Root, "htdocs")
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(found).To(BeFalse())
+		})
 
-		err := ProcessTemplateToFile(PhpFpmConfTemplate, filepath.Join(f.Home, "php-fpm.conf"), cfg)
-		Expect(err).ToNot(HaveOccurred())
-
-		result, err := ioutil.ReadFile(filepath.Join(f.Home, "php-fpm.conf"))
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(ContainSubstring(`include=/php/home/.php-fpm.d/*.conf`))
-		Expect(result).To(ContainSubstring(`listen = 127.0.0.1:9000`))
 	})
 }

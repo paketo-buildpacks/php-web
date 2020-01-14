@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/php-web-cnb/config"
+
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
 	"github.com/cloudfoundry/httpd-cnb/httpd"
@@ -98,11 +100,11 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("defaults php.webserver to apache webserver", func() {
-			Expect(pickWebServer(phpweb.BuildpackYAML{})).To(Equal(httpd.Dependency))
+			Expect(pickWebServer(config.BuildpackYAML{})).To(Equal(httpd.Dependency))
 		})
 
 		it("will read php.webserver and select nginx", func() {
-			Expect(pickWebServer(phpweb.BuildpackYAML{Config: phpweb.Config{WebServer: "nginx"}})).
+			Expect(pickWebServer(config.BuildpackYAML{Config: config.Config{WebServer: "nginx"}})).
 				To(Equal("nginx"))
 		})
 

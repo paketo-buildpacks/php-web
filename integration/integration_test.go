@@ -41,7 +41,7 @@ func TestIntegration(t *testing.T) {
 	var err error
 	err = PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
-	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
+	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
 }
 
@@ -57,9 +57,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		if app != nil {
-			app.Destroy()
-		}
+		app.Destroy()
 	})
 
 	when("deploying the simple_app fixture", func() {
@@ -67,9 +65,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -81,9 +78,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_custom_httpd_cfg", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: httpd"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Apache Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Apache HTTP Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/status?auto")
@@ -95,8 +91,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: php-server"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using PHP built-in server"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- PHP Web Server"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
@@ -107,9 +102,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_nginx", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -121,9 +115,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PushSimpleApp("simple_app_nginx_custom_cfg", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(ContainSubstring("Requested web server: nginx"))
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(ContainSubstring("Using Nginx Web Server"))
 			Expect(app.BuildLogs()).To(MatchRegexp("Nginx Server .*: Contributing to layer"))
 
 			// changed in custom-http.conf
@@ -160,7 +153,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying a basic PHP app with extensions", func() {
 		it("loads list of expected extensions", func() {
-			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
@@ -189,7 +182,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	when("deploying the php_app fixture", func() {
 		it("does not return the version of PHP in the response headers", func() {
-			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -213,7 +206,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("installs our hard-coded default version of PHP", func() {
-			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, false)
+			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = app.Start()
@@ -236,19 +229,107 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		when("the app is pushed twice", func() {
 			it("does generate php config twice", func() {
 				appName := "php_app"
-				debug := false
-				app, err = PreparePhpApp(appName, []string{phpDistURI, phpWebURI}, false)
+				env := make(map[string]string)
+				env["BP_DEBUG"] = "true"
+
+				app, err = PreparePhpApp(appName, []string{phpDistURI, phpWebURI}, env)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
 
-				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), MakeBuildEnv(debug), []string{phpDistURI, phpWebURI}...)
+				app, err = dagger.PackBuildNamedImageWithEnv(app.ImageName, filepath.Join("testdata", appName), env, []string{phpDistURI, phpWebURI}...)
 
 				Expect(app.BuildLogs()).To(MatchRegexp("PHP Web .*: Contributing to layer"))
 				Expect(app.BuildLogs()).NotTo(MatchRegexp("PHP Web .*: Reusing cached layer"))
 
 				Expect(app.Start()).To(Succeed())
 			})
+		})
+	})
+
+	when("deploying an app with sessions", func() {
+		it("redis session support is enabled and data is stored in redis", func() {
+			env := make(map[string]string)
+			env["CNB_SERVICES"] = `{
+				"Services": [
+					{
+						"binding_name": "redis-sessions",
+						"credentials": {
+							"host": "host.docker.internal",
+							"port": 63009
+						},
+						"instance_name": "",
+						"label": "",
+						"plan": "",
+						"tags": null
+					}
+				]
+			}`
+
+			app, err = PreparePhpApp("session_test", []string{phpDistURI, phpWebURI}, env)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = app.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(body).To(ContainSubstring("Redis Loaded: 1"))
+			Expect(body).To(ContainSubstring("Session Handler: redis"))
+			Expect(body).To(ContainSubstring("Session Name: PHPSESSIONID"))
+			Expect(body).To(ContainSubstring("Session Save Path: tcp://host.docker.internal:63009"))
+
+			_, _, err = app.HTTPGet("/session.php")
+			Expect(err).ToNot(HaveOccurred())
+			appLogs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(appLogs).To(ContainSubstring("PHP Notice:  session_start(): Redis not available while creating session_id"))
+			Expect(appLogs).To(ContainSubstring("PHP Warning:  session_start(): Failed to read session data"))
+		})
+
+		it("memcached session support is enabled and data is stored in memcached", func() {
+			env := make(map[string]string)
+			env["CNB_SERVICES"] = `{
+				"Services": [
+					{
+						"binding_name": "memcached-sessions",
+						"credentials": {
+							"servers": "host.docker.internal:60039",
+							"username": "user-1",
+							"password": "passwoRd"
+						},
+						"instance_name": "",
+						"label": "",
+						"plan": "",
+						"tags": null
+					}
+				]
+			}`
+
+			app, err = PreparePhpApp("session_test", []string{phpDistURI, phpWebURI}, env)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = app.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(body).To(ContainSubstring("Memcached Loaded: 1"))
+			Expect(body).To(ContainSubstring("Session Handler: memcached"))
+			Expect(body).To(ContainSubstring("Session Name: PHPSESSIONID"))
+			Expect(body).To(ContainSubstring("Session Save Path: host.docker.internal:60039"))
+			Expect(body).To(ContainSubstring("Memcached Session Binary: 1"))
+			Expect(body).To(ContainSubstring("Memcached SASL User: user-1"))
+			Expect(body).To(ContainSubstring("Memcached SASL Pass: passwoRd"))
+
+			_, _, err = app.HTTPGet("/session.php")
+			Expect(err).To(HaveOccurred())
+			appLogs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(appLogs).To(ContainSubstring("PHP Fatal error:  Uncaught Error: Failed to create session ID: memcached"))
+			Expect(appLogs).To(ContainSubstring("/session.php - Uncaught Error: Failed to create session ID: memcached"))
 		})
 	})
 }
