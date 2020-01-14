@@ -27,11 +27,18 @@ func main() {
 		log.Fatalln("session-driver [", sessionDriver, "] not valid. Valid options are: redis or memcached")
 	}
 
-	search, err := features.NewRedisSessionSupport(platformRoot, appRoot)
-	if err != nil {
-		log.Fatalln("NewRedisSessionSupport:", err)
+	var search features.SessionConfigurer
+	var err error
+
+	if sessionDriver == "redis" {
+		search, err = features.NewRedisSessionSupport(platformRoot, appRoot)
+	} else if sessionDriver == "memcached" {
+		search, err = features.NewMemcachedSessionSupport(platformRoot, appRoot)
 	}
-	//TODO: enable memcached support
+	if err != nil {
+		log.Fatalln("NewSessionConfigurer:", err)
+	}
+
 	err = search.ConfigureService()
 	if err != nil {
 		log.Fatalln("Search:", err)

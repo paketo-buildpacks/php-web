@@ -109,15 +109,16 @@ func (s MemcachedSessionSupport) ConfigureService() error {
 
 	// turn on memcached
 	buf.WriteString("extension=memcached.so\n")
+	buf.WriteString("extension=igbinary.so\n")
+	buf.WriteString("extension=msgpack.so\n")
 
 	// configure PHP to use memcached for sessions
 	servers, username, password := s.loadMemcachedProps()
-	savePath := fmt.Sprintf("PERSISTENT=app_sessions %s", servers)
 	buf.WriteString(fmt.Sprintf("session.name=PHPSESSIONID\n"))
 	buf.WriteString(fmt.Sprintf("session.save_handler=memcached\n"))
-	buf.WriteString(fmt.Sprintf("session.save_path=%q\n", savePath))
-	buf.WriteString("memcached.sess_binary=On\n")
-	buf.WriteString("memcached.use_sasl=On\n")
+	buf.WriteString(fmt.Sprintf("session.save_path=%q\n", servers))
+	buf.WriteString("memcached.sess_binary_protocol=On\n")
+	buf.WriteString("memcached.sess_persistent=On\n")
 	buf.WriteString(fmt.Sprintf("memcached.sess_sasl_username=%q\n", username))
 	buf.WriteString(fmt.Sprintf("memcached.sess_sasl_password=%q\n", password))
 
