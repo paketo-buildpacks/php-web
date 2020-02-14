@@ -1,7 +1,5 @@
 # cloud.google.com/go v0.52.0
 cloud.google.com/go/compute/metadata
-# code.cloudfoundry.org/lager v2.0.0+incompatible
-code.cloudfoundry.org/lager
 # github.com/BurntSushi/toml v0.3.1
 github.com/BurntSushi/toml
 # github.com/Masterminds/semver v1.5.0
@@ -19,7 +17,7 @@ github.com/buildpack/libbuildpack/logger
 github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/services
 github.com/buildpack/libbuildpack/stack
-# github.com/cloudfoundry/dagger v0.0.0-20200114192520-43fb0b3ec98f
+# github.com/cloudfoundry/dagger v0.0.0-20200213200846-c2a9723f08c4
 github.com/cloudfoundry/dagger
 github.com/cloudfoundry/dagger/utils
 # github.com/cloudfoundry/httpd-cnb v0.0.65-0.20191217205825-5463b3a78cdc
@@ -36,7 +34,7 @@ github.com/cloudfoundry/libcfbuildpack/logger
 github.com/cloudfoundry/libcfbuildpack/runner
 github.com/cloudfoundry/libcfbuildpack/services
 github.com/cloudfoundry/libcfbuildpack/test
-# github.com/cloudfoundry/packit v0.0.0-20191213210055-5b63a8a0a976
+# github.com/cloudfoundry/packit v0.0.0-20200213185904-9d0fc689e7af
 github.com/cloudfoundry/packit/pexec
 # github.com/cloudfoundry/php-dist-cnb v0.0.60
 github.com/cloudfoundry/php-dist-cnb/php
@@ -86,7 +84,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20200122134326-e047566fdf82
+# golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.2
 golang.org/x/text/encoding
