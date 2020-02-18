@@ -24,7 +24,6 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
-	"github.com/cloudfoundry/httpd-cnb/httpd"
 	"github.com/cloudfoundry/php-dist-cnb/php"
 	"github.com/cloudfoundry/php-web-cnb/phpweb"
 
@@ -64,12 +63,12 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 					{Name: phpweb.Dependency},
 					{
-						Name:     "httpd",
+						Name:     "php-server",
 						Metadata: buildplan.Metadata{"launch": true},
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.Dependency},
+					{Name: phpweb.Dependency},{Name: config.PhpWebServer},
 				},
 			}))
 		})
@@ -89,18 +88,18 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 					{Name: phpweb.Dependency},
 					{
-						Name:     "httpd",
+						Name:     "php-server",
 						Metadata: buildplan.Metadata{"launch": true},
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.Dependency},
+					{Name: phpweb.Dependency},{Name: config.PhpWebServer},
 				},
 			}))
 		})
 
 		it("defaults php.webserver to apache webserver", func() {
-			Expect(pickWebServer(config.BuildpackYAML{})).To(Equal(httpd.Dependency))
+			Expect(pickWebServer(config.BuildpackYAML{})).To(Equal("php-server"))
 		})
 
 		it("will read php.webserver and select nginx", func() {

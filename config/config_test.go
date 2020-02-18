@@ -153,7 +153,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(loaded).To(Equal(BuildpackYAML{
 				Config{
 					Version:      "",
-					WebServer:    "httpd",
+					WebServer:    "php-server",
 					WebDirectory: "htdocs",
 					LibDirectory: "lib",
 					Script:       "",

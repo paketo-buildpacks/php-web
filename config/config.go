@@ -126,7 +126,7 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 
 	buildpackYAML.Config.LibDirectory = "lib"
 	buildpackYAML.Config.WebDirectory = "htdocs"
-	buildpackYAML.Config.WebServer = ApacheHttpd
+	buildpackYAML.Config.WebServer = PhpWebServer
 	buildpackYAML.Config.ServerAdmin = "admin@localhost"
 	buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
 	buildpackYAML.Config.Memcached.SessionStoreServiceName = "memcached-sessions"

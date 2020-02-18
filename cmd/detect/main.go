@@ -26,7 +26,6 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
-	"github.com/cloudfoundry/httpd-cnb/httpd"
 	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	"github.com/buildpack/libbuildpack/buildplan"
@@ -143,7 +142,7 @@ func requiredPHP(version string) buildplan.Required {
 }
 
 func pickWebServer(bpYaml config.BuildpackYAML) string {
-	webServer := httpd.Dependency
+	webServer := config.PhpWebServer
 	if len(bpYaml.Config.WebServer) > 0 {
 		webServer = bpYaml.Config.WebServer
 	}

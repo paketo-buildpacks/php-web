@@ -61,8 +61,19 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("deploying the simple_app fixture", func() {
+		it("serves a simple php page hosted with built-in PHP server as the default", func() {
+			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- PHP Web Server"))
+
+			resp, _, err := app.HTTPGet("/index.php?date")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp).To(ContainSubstring("SUCCESS"))
+		})
+
 		it("serves a simple php page with httpd", func() {
-			app, err = PushSimpleApp("simple_app", []string{httpdURI, phpDistURI, phpWebURI}, false)
+			app, err = PushSimpleApp("simple_app_httpd", []string{httpdURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
@@ -85,17 +96,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/status?auto")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("ServerMPM: event"))
-		})
-
-		it("serves a simple php page hosted with built-in PHP server", func() {
-			app, err = PushSimpleApp("simple_app_php_only", []string{phpDistURI, phpWebURI}, false)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- PHP Web Server"))
-
-			resp, _, err := app.HTTPGet("/index.php?date")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp).To(ContainSubstring("SUCCESS"))
 		})
 
 		it("serves a simple php page with nginx", func() {
@@ -152,7 +152,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("deploying a basic PHP app with extensions", func() {
-		it("loads list of expected extensions", func() {
+		it.Pend("loads list of expected extensions", func() {
 			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
@@ -172,7 +172,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			output, err := app.Logs()
 
-			Expect(output).ToNot(ContainSubstring("Unable to load dynamic library"))
+			Expect(output).ToNot(ContainSubstring("Unable to load dynamic library"), app.BuildLogs)
 
 			for _, extension := range ExpectedExtensions {
 				Expect(output).To(ContainSubstring(extension))
@@ -406,7 +406,6 @@ var ExpectedExtensions = [...]string{
 	"phalcon",
 	"phpiredis",
 	"protobuf",
-	"tideways",
 	"tideways_xhprof",
 	"ionCube Loader",
 }
