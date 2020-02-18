@@ -152,7 +152,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("deploying a basic PHP app with extensions", func() {
-		it.Pend("loads list of expected extensions", func() {
+		it("loads list of expected extensions", func() {
 			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
