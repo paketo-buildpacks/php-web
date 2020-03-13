@@ -78,7 +78,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack v\d+.\d+.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
@@ -91,7 +91,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/org.cloudfoundry.php-web/php-web/procs.yml"))
-			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack v\d+.\d+.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
 
 			resp, _, err := app.HTTPGet("/status?auto")
 			Expect(err).ToNot(HaveOccurred())
