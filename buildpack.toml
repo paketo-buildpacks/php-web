@@ -1,7 +1,7 @@
 api = "0.2"
 
 [buildpack]
-id = "org.cloudfoundry.php-web"
+id = "paketo-buildpacks/php-web"
 name = "PHP Web Buildpack"
 version = "{{ .Version }}"
 
