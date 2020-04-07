@@ -42,6 +42,8 @@ github.com/cloudfoundry/packit v0.0.0-20200213185904-9d0fc689e7af h1:G6pQ5RECHT1
 github.com/cloudfoundry/packit v0.0.0-20200213185904-9d0fc689e7af/go.mod h1:L9r26GHPYpUReBWTpkU5BgyDuNVU01JSG4QsHybI0Bg=
 github.com/cloudfoundry/php-dist-cnb v0.0.60 h1:RJEBuqr8QujO81VCyLwUoP+6NvlRKjAz39xL30ws3F8=
 github.com/cloudfoundry/php-dist-cnb v0.0.60/go.mod h1:TxLqK4rBAV096kog8+y2Wi0nrxbDdJyzE4oJpFaST8c=
+github.com/cloudfoundry/php-dist-cnb v0.0.135 h1:AxLHCAZcmNinGH4NTX58JqI0qqfFdvrZSQJw+dUPJc8=
+github.com/cloudfoundry/php-dist-cnb v0.0.135/go.mod h1:r/o7IQU/KysMVvytbC0gsztcpM0IVGpCkouIlAlsOUI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
