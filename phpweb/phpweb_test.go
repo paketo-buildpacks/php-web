@@ -26,10 +26,10 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
-	"github.com/cloudfoundry/php-dist-cnb/php"
-	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestUnitPHPWeb(t *testing.T) {
@@ -64,7 +64,7 @@ func testPHPWeb(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("loads the available extensions", func() {
-			layer := f.Build.Layers.Layer(php.Dependency)
+			layer := f.Build.Layers.Layer("php")
 
 			// WARN: this is setting a global env variable, which might cause issues if tests are run in parallel
 			os.Setenv("PHP_EXTENSION_DIR", filepath.Join(layer.Root, "lib", "php", "extensions", "no-debug-non-zts-20170718"))

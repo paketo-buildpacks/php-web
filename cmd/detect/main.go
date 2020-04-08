@@ -22,15 +22,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/php-web-cnb/config"
-
-	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
-
-	"github.com/cloudfoundry/php-dist-cnb/php"
-
 	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
+	"github.com/cloudfoundry/php-web-cnb/config"
 	"github.com/cloudfoundry/php-web-cnb/phpweb"
 )
 
@@ -131,12 +127,12 @@ func runDetect(context detect.Detect) (int, error) {
 
 func requiredPHP(version string) buildplan.Required {
 	return buildplan.Required{
-		Name:    php.Dependency,
+		Name:    "php",
 		Version: version,
 		Metadata: buildplan.Metadata{
 			"launch":                    true,
 			"build":                     true,
-			buildpackplan.VersionSource: php.DefaultVersionsSource,
+			buildpackplan.VersionSource: "default-versions",
 		},
 	}
 }

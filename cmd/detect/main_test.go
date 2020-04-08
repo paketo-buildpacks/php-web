@@ -20,19 +20,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/php-web-cnb/config"
-
-	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
-
-	"github.com/cloudfoundry/php-dist-cnb/php"
-	"github.com/cloudfoundry/php-web-cnb/phpweb"
-
 	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"
-	. "github.com/onsi/gomega"
+	"github.com/cloudfoundry/php-web-cnb/config"
+	"github.com/cloudfoundry/php-web-cnb/phpweb"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestUnitDetect(t *testing.T) {
@@ -56,10 +53,10 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
 				Requires: []buildplan.Required{
 					{
-						Name:    php.Dependency,
+						Name:    "php",
 						Version: fakeVersion,
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
-							buildpackplan.VersionSource: php.DefaultVersionsSource},
+							buildpackplan.VersionSource: "default-versions"},
 					},
 					{Name: phpweb.Dependency},
 					{
@@ -68,7 +65,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.Dependency},{Name: config.PhpWebServer},
+					{Name: phpweb.Dependency}, {Name: config.PhpWebServer},
 				},
 			}))
 		})
@@ -81,10 +78,10 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
 				Requires: []buildplan.Required{
 					{
-						Name:    php.Dependency,
+						Name:    "php",
 						Version: fakeVersion,
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
-							buildpackplan.VersionSource: php.DefaultVersionsSource},
+							buildpackplan.VersionSource: "default-versions"},
 					},
 					{Name: phpweb.Dependency},
 					{
@@ -93,7 +90,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 				Provides: []buildplan.Provided{
-					{Name: phpweb.Dependency},{Name: config.PhpWebServer},
+					{Name: phpweb.Dependency}, {Name: config.PhpWebServer},
 				},
 			}))
 		})
@@ -117,10 +114,10 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
 				Requires: []buildplan.Required{
 					{
-						Name:    php.Dependency,
+						Name:    "php",
 						Version: fakeVersion,
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
-							buildpackplan.VersionSource: php.DefaultVersionsSource},
+							buildpackplan.VersionSource: "default-versions"},
 					},
 					{Name: phpweb.Dependency},
 					{
@@ -167,10 +164,10 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
 				Requires: []buildplan.Required{
 					{
-						Name:    php.Dependency,
+						Name:    "php",
 						Version: fakeVersion,
 						Metadata: buildplan.Metadata{"launch": true, "build": true,
-							buildpackplan.VersionSource: php.DefaultVersionsSource},
+							buildpackplan.VersionSource: "default-versions"},
 					},
 					{Name: phpweb.Dependency},
 				},
