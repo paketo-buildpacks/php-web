@@ -1,6 +1,7 @@
 package procmgr
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -28,7 +29,7 @@ func ReadProcs(path string) (Procs, error) {
 			Processes: map[string]Proc{},
 		}, nil
 	} else if err != nil {
-		return Procs{}, err
+		return Procs{}, fmt.Errorf("failed to open proc.yml: %w", err)
 	}
 	defer file.Close()
 
@@ -39,7 +40,7 @@ func ReadProcs(path string) (Procs, error) {
 
 	err = yaml.UnmarshalStrict(contents, &procs)
 	if err != nil {
-		return Procs{}, err
+		return Procs{}, fmt.Errorf("invalid proc.ymls contents:\n %q: %w", contents, err)
 	}
 
 	return procs, nil
@@ -57,7 +58,7 @@ func WriteProcs(path string, procs Procs) error {
 func AppendOrUpdateProcs(path string, procs Procs) error {
 	existingProcs, err := ReadProcs(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to append to proc.yml: %w", err)
 	}
 
 	for name, proc := range procs.Processes {
