@@ -3,5 +3,5 @@
 .bin
 /bin
 *.tgz
-php-web-cnb_*
+php-web_*
 .vscode/

@@ -1,6 +1,6 @@
 # PHP App Cloud Native Buildpack
 
-The Cloud Foundry PHP App Buildpack is a Cloud Native Buildpack V3 that configures PHP applications to run.
+The Paketo PHP App Buildpack is a Cloud Native Buildpack V3 that configures PHP applications to run.
 
 This buildpack is designed to work in collaboration with other buildpacks which do things like provide PHP binaries.
 
