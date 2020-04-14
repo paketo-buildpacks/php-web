@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/php-web-cnb
+module github.com/paketo-buildpacks/php-web
 
 go 1.12
 
