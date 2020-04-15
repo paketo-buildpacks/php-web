@@ -2,15 +2,16 @@ package features_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"testing"
+
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/cloudfoundry/php-web-cnb/config"
 	"github.com/cloudfoundry/php-web-cnb/features"
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"io/ioutil"
-	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/gomega"
 )
@@ -34,9 +35,10 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 			factory = test.NewBuildFactory(t)
 			p = features.NewNginxFeature(
 				features.FeatureConfig{
-					BpYAML:   config.BuildpackYAML{Config: config.Config{
-						WebServer:    config.Nginx,
-						WebDirectory: "some-dir",
+					BpYAML: config.BuildpackYAML{Config: config.Config{
+						WebServer:           config.Nginx,
+						WebDirectory:        "some-dir",
+						EnableHTTPSRedirect: true,
 					}},
 					App:      factory.Build.Application,
 					IsWebApp: true,
@@ -58,8 +60,8 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 				it("is false", func() {
 					p = features.NewNginxFeature(
 						features.FeatureConfig{
-							BpYAML:   config.BuildpackYAML{Config: config.Config{
-								WebServer:   "some-other-webserver",
+							BpYAML: config.BuildpackYAML{Config: config.Config{
+								WebServer:    "some-other-webserver",
 								WebDirectory: "some-dir",
 							}},
 							App:      factory.Build.Application,
@@ -73,9 +75,9 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 			when("and it is not a web app", func() {
 				it("is false", func() {
 					p = features.NewNginxFeature(
-						features.FeatureConfig {
-							BpYAML: config.BuildpackYAML{Config: config.Config{}},
-							App: factory.Build.Application,
+						features.FeatureConfig{
+							BpYAML:   config.BuildpackYAML{Config: config.Config{}},
+							App:      factory.Build.Application,
 							IsWebApp: false,
 						},
 					)
@@ -98,10 +100,10 @@ func testNginx(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(buf)).To(ContainSubstring(fmt.Sprintf("server unix:%s", layer.Root)))
 			Expect(string(buf)).To(ContainSubstring("some-dir"))
+			Expect(string(buf)).To(ContainSubstring("return 301 https://$http_host$request_uri;"))
 
 			procs, err := procmgr.ReadProcs(procsPath)
 			Expect(err).ToNot(HaveOccurred())
-
 
 			Expect(procs.Processes).To(Equal(map[string]procmgr.Proc{
 				"nginx": procmgr.Proc{

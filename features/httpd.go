@@ -13,17 +13,16 @@ import (
 	"github.com/cloudfoundry/php-web-cnb/config"
 )
 
-
 type HttpdFeature struct {
-	bpYAML config.BuildpackYAML
-	app    application.Application
+	bpYAML   config.BuildpackYAML
+	app      application.Application
 	isWebApp bool
 }
 
 func NewHttpdFeature(featureConfig FeatureConfig) HttpdFeature {
 	return HttpdFeature{
-		bpYAML: featureConfig.BpYAML,
-		app:    featureConfig.App,
+		bpYAML:   featureConfig.BpYAML,
+		app:      featureConfig.App,
 		isWebApp: featureConfig.IsWebApp,
 	}
 }
@@ -47,10 +46,11 @@ func (p HttpdFeature) EnableFeature(commonLayers layers.Layers, currentLayer lay
 func (p HttpdFeature) writeConfig() error {
 
 	cfg := config.HttpdConfig{
-		ServerAdmin:  p.bpYAML.Config.ServerAdmin,
-		AppRoot:      p.app.Root,
-		WebDirectory: p.bpYAML.Config.WebDirectory,
-		FpmSocket:    "127.0.0.1:9000",
+		ServerAdmin:          p.bpYAML.Config.ServerAdmin,
+		AppRoot:              p.app.Root,
+		WebDirectory:         p.bpYAML.Config.WebDirectory,
+		FpmSocket:            "127.0.0.1:9000",
+		DisableHTTPSRedirect: !p.bpYAML.Config.EnableHTTPSRedirect,
 	}
 	template := config.HttpdConfTemplate
 	confPath := filepath.Join(p.app.Root, "httpd.conf")

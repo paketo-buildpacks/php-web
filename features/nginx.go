@@ -1,25 +1,26 @@
 package features
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/php-web-cnb/config"
 	"github.com/cloudfoundry/php-web-cnb/procmgr"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type NginxFeature struct {
-	bpYAML config.BuildpackYAML
-	app    application.Application
+	bpYAML   config.BuildpackYAML
+	app      application.Application
 	isWebApp bool
 }
 
 func NewNginxFeature(featureConfig FeatureConfig) NginxFeature {
 	return NginxFeature{
-		bpYAML: featureConfig.BpYAML,
-		app:    featureConfig.App,
+		bpYAML:   featureConfig.BpYAML,
+		app:      featureConfig.App,
 		isWebApp: featureConfig.IsWebApp,
 	}
 }
@@ -42,9 +43,10 @@ func (p NginxFeature) EnableFeature(commonLayers layers.Layers, currentLayer lay
 
 func (p NginxFeature) writeConfig(currentLayer layers.Layer) error {
 	cfg := config.NginxConfig{
-		AppRoot:      p.app.Root,
-		WebDirectory: p.bpYAML.Config.WebDirectory,
-		FpmSocket:    filepath.Join(currentLayer.Root, "php-fpm.socket"),
+		AppRoot:              p.app.Root,
+		WebDirectory:         p.bpYAML.Config.WebDirectory,
+		FpmSocket:            filepath.Join(currentLayer.Root, "php-fpm.socket"),
+		DisableHTTPSRedirect: !p.bpYAML.Config.EnableHTTPSRedirect,
 	}
 	template := config.NginxConfTemplate
 	confPath := filepath.Join(p.app.Root, "nginx.conf")

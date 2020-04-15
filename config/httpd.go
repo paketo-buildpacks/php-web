@@ -121,6 +121,17 @@ RemoteIpInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
 #  channel.
 SetEnvIf x-forwarded-proto https HTTPS=on
 
+{{if not .DisableHTTPSRedirect }}
+#
+# If not HTTPS, forward to HTTPS
+#
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} !=""
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
+{{end}}
+
 # Talk to PHP via FCGI & php-fpm
 DirectoryIndex index.php index.html index.htm
 

@@ -18,9 +18,13 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/cloudfoundry/dagger"
 
@@ -31,7 +35,6 @@ import (
 )
 
 var (
-	app *dagger.App
 	err error
 )
 
@@ -43,6 +46,50 @@ func TestIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
+}
+
+func HTTPGetLikeProxy(app *dagger.App, path string) (string, map[string][]string, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", app.GetBaseURL(), path), nil)
+	if err != nil {
+		return "", nil, err
+	}
+	req.Header.Add("X-Forwarded-For", "10.10.10.10,50.50.50.50")
+	req.Header.Add("X-Forwarded-Proto", "http")
+	req.Header.Add("X-Forwarded-Port", "80")
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: 2 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return "", nil, fmt.Errorf("received bad response from application")
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return string(body), resp.Header, nil
+}
+
+func AssertRedirectToHTTPS(app *dagger.App, headers map[string][]string) {
+	for key, header := range headers {
+		for _, value := range header {
+			if key == "Location" {
+				Expect(value).To(ContainSubstring(strings.Replace(app.GetBaseURL(), "http://", "https://", 1)))
+			}
+		}
+	}
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
@@ -83,6 +130,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
+
+			_, headers, err := HTTPGetLikeProxy(app, "/index.php?date")
+			Expect(err).ToNot(HaveOccurred())
+			AssertRedirectToHTTPS(app, headers)
 		})
 
 		it("serves a simple php page with httpd and custom httpd config", func() {
@@ -109,6 +160,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
+
+			_, headers, err := HTTPGetLikeProxy(app, "/index.php?date")
+			Expect(err).ToNot(HaveOccurred())
+			AssertRedirectToHTTPS(app, headers)
 		})
 
 		it("serves a simple php page with nginx and custom config", func() {

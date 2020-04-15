@@ -62,17 +62,19 @@ func ProcessTemplateToFile(templateBody string, outputPath string, data interfac
 
 // HttpdConfig supplies values for templated httpd.conf
 type HttpdConfig struct {
-	ServerAdmin  string
-	AppRoot      string
-	WebDirectory string
-	FpmSocket    string
+	ServerAdmin          string
+	DisableHTTPSRedirect bool
+	AppRoot              string
+	WebDirectory         string
+	FpmSocket            string
 }
 
 // NginxConfig supplies values for templated nginx.conf
 type NginxConfig struct {
-	AppRoot      string
-	WebDirectory string
-	FpmSocket    string
+	DisableHTTPSRedirect bool
+	AppRoot              string
+	WebDirectory         string
+	FpmSocket            string
 }
 
 // PhpIniConfig supplies values for templated php.ini
@@ -100,14 +102,15 @@ type BuildpackYAML struct {
 
 // Config represents PHP specific configuration options for BuildpackYAML
 type Config struct {
-	Version      string    `yaml:"version"`
-	WebServer    string    `yaml:"webserver"`
-	WebDirectory string    `yaml:"webdirectory"`
-	LibDirectory string    `yaml:"libdirectory"`
-	Script       string    `yaml:"script"`
-	ServerAdmin  string    `yaml:"serveradmin"`
-	Redis        Redis     `yaml:"redis"`
-	Memcached    Memcached `yaml:"memcached"`
+	Version             string    `yaml:"version"`
+	WebServer           string    `yaml:"webserver"`
+	WebDirectory        string    `yaml:"webdirectory"`
+	LibDirectory        string    `yaml:"libdirectory"`
+	Script              string    `yaml:"script"`
+	ServerAdmin         string    `yaml:"serveradmin"`
+	EnableHTTPSRedirect bool      `yaml:"disable_https_redirect"`
+	Redis               Redis     `yaml:"redis"`
+	Memcached           Memcached `yaml:"memcached"`
 }
 
 // Redis represents PHP Redis specific configuration options for `buildpack.yml`
@@ -130,6 +133,7 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 	buildpackYAML.Config.ServerAdmin = "admin@localhost"
 	buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
 	buildpackYAML.Config.Memcached.SessionStoreServiceName = "memcached-sessions"
+	buildpackYAML.Config.EnableHTTPSRedirect = true
 
 	if exists, err := helper.FileExists(configFile); err != nil {
 		return BuildpackYAML{}, err

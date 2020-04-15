@@ -64,13 +64,32 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(result).To(ContainSubstring(`RemoteIpHeader x-forwarded-for`))
 			Expect(result).To(ContainSubstring(`RemoteIpInternalProxy 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16`))
 			Expect(result).To(ContainSubstring(`SetEnvIf x-forwarded-proto https HTTPS=on`))
+			Expect(result).To(ContainSubstring(`RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]`))
 			Expect(result).To(ContainSubstring(`Define fcgi-listener fcgi://127.0.0.1:9000/app/htdocs`))
 			Expect(result).To(ContainSubstring(`<Proxy "${fcgi-listener}">`))
 			Expect(result).To(ContainSubstring(`ProxySet disablereuse=On retry=0`))
 			Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
 			Expect(result).To(ContainSubstring(`SetHandler proxy:fcgi://127.0.0.1:9000`))
 			Expect(result).To(ContainSubstring(`RequestHeader unset Proxy early`))
-			Expect(string(result)).To(ContainSubstring(`IncludeOptional "/app/.httpd.conf.d/*.conf"`))
+			Expect(result).To(ContainSubstring(`IncludeOptional "/app/.httpd.conf.d/*.conf"`))
+		})
+
+		it("generates an httpd.conf and disables HTTPS redirection", func() {
+			cfg := HttpdConfig{
+				AppRoot:              "/app",
+				ServerAdmin:          "test@example.org",
+				WebDirectory:         "htdocs",
+				FpmSocket:            "127.0.0.1:9000",
+				DisableHTTPSRedirect: true,
+			}
+
+			err := ProcessTemplateToFile(HttpdConfTemplate, filepath.Join(f.Home, "httpd.conf"), cfg)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "httpd.conf"))
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).ToNot(ContainSubstring(`RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]`))
 		})
 
 		it("generates an nginx.conf from the template", func() {
@@ -87,9 +106,30 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(ContainSubstring(`root               /app/public;`))
 			Expect(result).To(ContainSubstring(`server unix:/tmp/php-fpm.socket;`))
-			Expect(result).To(ContainSubstring(`listen       {{env "PORT"}};`))
+			Expect(result).To(ContainSubstring(`listen       {{env "PORT"}}  default_server;`))
+			Expect(result).To(ContainSubstring(`map $http_x_forwarded_proto $redirect_to_https {`))
+			Expect(result).To(ContainSubstring(`if ($redirect_to_https = "yes") {`))
+			Expect(result).To(ContainSubstring(`return 301 https://$http_host$request_uri;`))
 			Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-server.conf`))
 			Expect(string(result)).To(ContainSubstring(`include /app/.nginx.conf.d/*-http.conf`))
+		})
+
+		it("generates an nginx.conf and disables HTTPS redirection", func() {
+			cfg := NginxConfig{
+				AppRoot:              "/app",
+				WebDirectory:         "public",
+				FpmSocket:            "/tmp/php-fpm.socket",
+				DisableHTTPSRedirect: true,
+			}
+
+			err := ProcessTemplateToFile(NginxConfTemplate, filepath.Join(f.Home, "nginx.conf"), cfg)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(f.Home, "nginx.conf"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).ToNot(ContainSubstring(`map $http_x_forwarded_proto $redirect_to_https {`))
+			Expect(result).ToNot(ContainSubstring(`if ($redirect_to_https = "yes") {`))
+			Expect(result).ToNot(ContainSubstring(`return 301 https://$http_host$request_uri;`))
 		})
 
 		it("generates a php.ini from the template", func() {
@@ -152,12 +192,13 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).To(Succeed())
 			Expect(loaded).To(Equal(BuildpackYAML{
 				Config{
-					Version:      "",
-					WebServer:    "php-server",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@localhost",
+					Version:             "",
+					WebServer:           "php-server",
+					WebDirectory:        "htdocs",
+					LibDirectory:        "lib",
+					Script:              "",
+					ServerAdmin:         "admin@localhost",
+					EnableHTTPSRedirect: true,
 					Redis: Redis{
 						SessionStoreServiceName: "redis-sessions",
 					},
@@ -175,12 +216,13 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
 			actual := BuildpackYAML{
 				Config: Config{
-					Version:      "1.0.0",
-					WebServer:    "httpd",
-					WebDirectory: "htdocs",
-					LibDirectory: "lib",
-					Script:       "",
-					ServerAdmin:  "admin@example.com",
+					Version:             "1.0.0",
+					WebServer:           "httpd",
+					WebDirectory:        "htdocs",
+					LibDirectory:        "lib",
+					Script:              "",
+					ServerAdmin:         "admin@example.com",
+					EnableHTTPSRedirect: true,
 					Redis: Redis{
 						SessionStoreServiceName: "redis-sessions",
 					},
