@@ -1,6 +1,6 @@
-# PHP App Cloud Native Buildpack
+# PHP Web Cloud Native Buildpack
 
-The Paketo PHP App Buildpack is a Cloud Native Buildpack V3 that configures PHP applications to run.
+The Paketo PHP Web Buildpack is a Cloud Native Buildpack V3 that configures PHP applications to run.
 
 This buildpack is designed to work in collaboration with other buildpacks which do things like provide PHP binaries.
 (e.g. [PHP Dist CNB](https://github.com/paketo-buildpacks/php-dist))
@@ -21,7 +21,7 @@ Looks at `buildpack.yml` for `php.webserver`, if
 
 ## Integration
 
-The PHP App CNB provides `php-web` as a dependency. Downstream buildpacks can require the php-web dependency, however
+The PHP Web CNB provides `php-web` as a dependency. Downstream buildpacks can require the php-web dependency, however
 this buildpack signifies the end of the PHP group build processes, so any extension to this could be included in other
 independent buildpacks. Requiring `php-web` is not a workflow that is supported.
 
