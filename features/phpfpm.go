@@ -3,8 +3,8 @@ package features
 import (
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
-	"github.com/cloudfoundry/php-web-cnb/config"
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
+	"github.com/paketo-buildpacks/php-web/config"
+	"github.com/paketo-buildpacks/php-web/procmgr"
 	"os"
 	"path/filepath"
 	"strings"
