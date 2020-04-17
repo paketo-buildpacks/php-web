@@ -21,9 +21,11 @@ Looks at `buildpack.yml` for `php.webserver`, if
 
 ## Integration
 
-The PHP Web CNB provides `php-web` as a dependency. Downstream buildpacks can require the php-web dependency, however
-this buildpack signifies the end of the PHP group build processes, so any extension to this could be included in other
-independent buildpacks. Requiring `php-web` is not a workflow that is supported.
+The PHP Web CNB is the last in the standard chain of PHP CNBs. It provides `php-web`
+as a dependency, but currently there's no scenario we can imagine that you would use
+a downstream buildpack to require this dependency. If a user likes to include some other
+functionality (like a monitoring tool or a db driver), it can be done independent of
+the PHP Web CNB without requiring a dependency of it.
 
 ## To Package
 
