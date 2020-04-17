@@ -19,7 +19,7 @@ package main
 import (
 	"testing"
 
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
+	"github.com/paketo-buildpacks/php-web/procmgr"
 
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"

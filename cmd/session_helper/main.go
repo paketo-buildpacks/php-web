@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/cloudfoundry/php-web-cnb/features"
+	"github.com/paketo-buildpacks/php-web/features"
 )
 
 func main() {

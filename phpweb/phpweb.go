@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/php-web-cnb/config"
+	"github.com/paketo-buildpacks/php-web/config"
 
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 )

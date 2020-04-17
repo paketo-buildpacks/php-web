@@ -21,7 +21,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
+	"github.com/paketo-buildpacks/php-web/procmgr"
 )
 
 func main() {
