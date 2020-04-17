@@ -58,7 +58,7 @@ This buildpack is released under version 2.0 of the [Apache License][a].
   version: 10.1.x
 
   # text user can specify to use PHP's built-in Web Server
-  # deault: php-server
+  # default: php-server
   webserver: php-server
 
   # directory where web app code is stored
