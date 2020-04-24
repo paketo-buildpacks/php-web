@@ -210,7 +210,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("can load a version & web server", func() {
-			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com'}}"
+			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com', 'enable_https_redirect': false}}"
 			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
 
 			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
@@ -222,7 +222,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 					LibDirectory:        "lib",
 					Script:              "",
 					ServerAdmin:         "admin@example.com",
-					EnableHTTPSRedirect: true,
+					EnableHTTPSRedirect: false,
 					Redis: Redis{
 						SessionStoreServiceName: "redis-sessions",
 					},

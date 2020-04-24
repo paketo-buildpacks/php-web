@@ -108,7 +108,7 @@ type Config struct {
 	LibDirectory        string    `yaml:"libdirectory"`
 	Script              string    `yaml:"script"`
 	ServerAdmin         string    `yaml:"serveradmin"`
-	EnableHTTPSRedirect bool      `yaml:"disable_https_redirect"`
+	EnableHTTPSRedirect bool      `yaml:"enable_https_redirect"`
 	Redis               Redis     `yaml:"redis"`
 	Memcached           Memcached `yaml:"memcached"`
 }
