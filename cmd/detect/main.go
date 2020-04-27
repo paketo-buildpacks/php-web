@@ -26,8 +26,8 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
-	"github.com/cloudfoundry/php-web-cnb/config"
-	"github.com/cloudfoundry/php-web-cnb/phpweb"
+	"github.com/paketo-buildpacks/php-web/config"
+	"github.com/paketo-buildpacks/php-web/phpweb"
 )
 
 func main() {

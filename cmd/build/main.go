@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/php-web-cnb/phpweb"
+	"github.com/paketo-buildpacks/php-web/phpweb"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )

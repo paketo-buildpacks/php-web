@@ -4,7 +4,7 @@ import (
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
-	"github.com/cloudfoundry/php-web-cnb/config"
+	"github.com/paketo-buildpacks/php-web/config"
 )
 
 type FeatureConfig struct {

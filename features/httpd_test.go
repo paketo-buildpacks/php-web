@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/php-web-cnb/procmgr"
+	"github.com/paketo-buildpacks/php-web/procmgr"
 
-	"github.com/cloudfoundry/php-web-cnb/config"
-	"github.com/cloudfoundry/php-web-cnb/features"
+	"github.com/paketo-buildpacks/php-web/config"
+	"github.com/paketo-buildpacks/php-web/features"
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/sclevine/spec"
