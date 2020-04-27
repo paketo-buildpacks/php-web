@@ -35,13 +35,14 @@ func testHttpd(t *testing.T, when spec.G, it spec.S) {
 		it.Before(func() {
 			factory = test.NewBuildFactory(t)
 			p = features.NewHttpdFeature(
-				features.FeatureConfig {
-				BpYAML: config.BuildpackYAML{Config: config.Config{
-					WebServer:    config.ApacheHttpd,
-					WebDirectory: "some-dir",
-					ServerAdmin:  "my-admin@example.com",
-				}},
-					App: factory.Build.Application,
+				features.FeatureConfig{
+					BpYAML: config.BuildpackYAML{Config: config.Config{
+						WebServer:           config.ApacheHttpd,
+						WebDirectory:        "some-dir",
+						ServerAdmin:         "my-admin@example.com",
+						EnableHTTPSRedirect: true,
+					}},
+					App:      factory.Build.Application,
 					IsWebApp: true,
 				},
 			)
@@ -77,11 +78,11 @@ func testHttpd(t *testing.T, when spec.G, it spec.S) {
 			when("and it is not a web app", func() {
 				it("is false", func() {
 					p = features.NewHttpdFeature(
-						features.FeatureConfig {
+						features.FeatureConfig{
 							BpYAML: config.BuildpackYAML{Config: config.Config{
 								WebServer: config.ApacheHttpd,
 							}},
-							App: factory.Build.Application,
+							App:      factory.Build.Application,
 							IsWebApp: false,
 						},
 					)
@@ -105,6 +106,7 @@ func testHttpd(t *testing.T, when spec.G, it spec.S) {
 			Expect(string(buf)).To(ContainSubstring("127.0.0.1:9000"))
 			Expect(string(buf)).To(ContainSubstring("some-dir"))
 			Expect(string(buf)).To(ContainSubstring("my-admin@example.com"))
+			Expect(string(buf)).To(ContainSubstring("RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]"))
 
 			procs, err := procmgr.ReadProcs(procsPath)
 			Expect(err).ToNot(HaveOccurred())
