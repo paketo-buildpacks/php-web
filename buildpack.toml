@@ -4,6 +4,7 @@ api = "0.2"
 id = "paketo-buildpacks/php-web"
 name = "PHP Web Buildpack"
 version = "{{ .Version }}"
+homepage = "https://github.com/paketo-buildpacks/php-web"
 
 [metadata]
 default_version = "7.2.*"
