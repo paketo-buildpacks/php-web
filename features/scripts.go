@@ -2,28 +2,29 @@ package features
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/paketo-buildpacks/php-web/config"
-	"path/filepath"
-	"strings"
 )
 
 type ScriptsFeature struct {
-	bpYAML config.BuildpackYAML
-	app    application.Application
+	bpYAML   config.BuildpackYAML
+	app      application.Application
 	isWebApp bool
-	logger logger.Logger
+	logger   logger.Logger
 }
 
 func NewScriptsFeature(featureConfig FeatureConfig) ScriptsFeature {
 	return ScriptsFeature{
-		bpYAML: featureConfig.BpYAML,
-		app:    featureConfig.App,
+		bpYAML:   featureConfig.BpYAML,
+		app:      featureConfig.App,
 		isWebApp: featureConfig.IsWebApp,
-		logger: featureConfig.Logger,
+		logger:   featureConfig.Logger,
 	}
 }
 
@@ -65,5 +66,4 @@ func (p ScriptsFeature) EnableFeature(commonLayers layers.Layers, currentLayer l
 			{Type: "task", Command: command, Direct: false},
 		},
 	})
-	return nil
 }

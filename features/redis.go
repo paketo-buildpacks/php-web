@@ -124,8 +124,8 @@ func (s RedisSessionSupport) ConfigureService() error {
 
 	// configure PHP to use redis for sessions
 	savePath := s.formatRedisURL()
-	buf.WriteString(fmt.Sprintf("session.name=PHPSESSIONID\n"))
-	buf.WriteString(fmt.Sprintf("session.save_handler=redis\n"))
+	buf.WriteString("session.name=PHPSESSIONID\n")
+	buf.WriteString("session.save_handler=redis\n")
 	buf.WriteString(fmt.Sprintf("session.save_path=%q\n", savePath))
 
 	// don't use helper.WriteFile because it will mess up the URLencoded values

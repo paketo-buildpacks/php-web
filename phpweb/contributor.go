@@ -38,10 +38,15 @@ type Contributor struct {
 	features []features.Feature
 }
 
-func generateRandomHash() [32]byte {
+func generateRandomHash() ([32]byte, error) {
 	randBuf := make([]byte, 512)
-	rand.Read(randBuf)
-	return sha256.Sum256(randBuf)
+
+	_, err := rand.Read(randBuf)
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return sha256.Sum256(randBuf), nil
 }
 
 // NewContributor creates a new Contributor instance. willContribute is true if build plan contains "php-script" or "php-web" dependency, otherwise false.
@@ -57,7 +62,10 @@ func NewContributor(context build.Build) (Contributor, bool, error) {
 	}
 	context.Logger.Debug("Build Pack YAML: %v", buildpackYAML)
 
-	randomHash := generateRandomHash()
+	randomHash, err := generateRandomHash()
+	if err != nil {
+		return Contributor{}, false, err
+	}
 
 	webDir := PickWebDir(buildpackYAML)
 	isWebApp, err := SearchForWebApp(context.Application.Root, webDir)
