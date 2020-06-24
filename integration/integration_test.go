@@ -34,16 +34,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var (
-	err error
-)
-
 func TestIntegration(t *testing.T) {
 	RegisterTestingT(t)
 
-	var err error
-	err = PreparePhpBps()
+	err := PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
+
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
 }
@@ -104,7 +100,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		app.Destroy()
+		Expect(app.Destroy()).To(Succeed())
 	})
 
 	when("deploying the simple_app fixture", func() {
@@ -198,7 +194,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		it("runs a cli app with arguments", func() {
 			app, err := PushSimpleApp("simple_cli_app_with_args", []string{phpDistURI, phpWebURI}, true)
 			Expect(err).NotTo(HaveOccurred())
-			defer app.Destroy()
 
 			logs, err := app.Logs()
 			Expect(err).ToNot(HaveOccurred())
@@ -215,8 +210,11 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
+				Expect(err).NotTo(HaveOccurred())
+
 				containerID, imageName, volumeIDs, err := app.Info()
 				Expect(err).NotTo(HaveOccurred())
+
 				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
 
 				containerLogs, err := app.Logs()
@@ -226,7 +224,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			output, err := app.Logs()
-
+			Expect(err).NotTo(HaveOccurred())
 			Expect(output).ToNot(ContainSubstring("Unable to load dynamic library"), app.BuildLogs)
 
 			for _, extension := range ExpectedExtensions {
