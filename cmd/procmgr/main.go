@@ -39,7 +39,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	runProcs(procs)
+	if err := runProcs(procs); err != nil {
+		fmt.Fprintln(os.Stderr, "error running procs:", err)
+		os.Exit(2)
+	}
 }
 
 type procMsg struct {
@@ -55,11 +58,9 @@ func runProcs(procs procmgr.Procs) error {
 		go runProc(procName, proc, msgs)
 	}
 
-	select {
-	case msg := <-msgs:
-		fmt.Fprintln(os.Stderr, "process", msg.ProcName, "exited, status:", msg.Cmd.ProcessState)
-		return msg.Err
-	}
+	msg := <-msgs
+	fmt.Fprintln(os.Stderr, "process", msg.ProcName, "exited, status:", msg.Cmd.ProcessState)
+	return msg.Err
 }
 
 func runProc(procName string, proc procmgr.Proc, msgs chan procMsg) {

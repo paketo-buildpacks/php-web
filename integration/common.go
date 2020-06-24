@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/dagger"
+
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -45,7 +47,7 @@ func PreparePhpBps() error {
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
 	for _, bp := range []string{phpDistURI, httpdURI, nginxURI, phpWebURI} {
-		dagger.DeleteBuildpack(bp)
+		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
 
@@ -82,9 +84,12 @@ func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, 
 	}
 
 	err = app.Start()
-
 	if err != nil {
 		_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
+		if err != nil {
+			return app, err
+		}
+
 		containerID, imageName, volumeIDs, err := app.Info()
 		if err != nil {
 			return app, err

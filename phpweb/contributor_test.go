@@ -44,9 +44,8 @@ func TestUnitContributor(t *testing.T) {
 
 func testContributor(t *testing.T, when spec.G, it spec.S) {
 	var f *test.BuildFactory
-	var CreateTestContributor func(bpYAML config.BuildpackYAML) Contributor
 
-	CreateTestContributor = func(bpYAML config.BuildpackYAML) Contributor {
+	CreateTestContributor := func(bpYAML config.BuildpackYAML) Contributor {
 		bytes, err := yaml.Marshal(bpYAML)
 		Expect(err).To(Not(HaveOccurred()))
 
@@ -80,7 +79,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 	when("starting a web app", func() {
 		it.Before(func() {
 			buildDir := filepath.Join(f.Build.Application.Root, "htdocs", "index.php")
-			helper.WriteFile(buildDir, 0644, "junk")
+			Expect(helper.WriteFile(buildDir, 0644, "junk")).To(Succeed())
 		})
 
 		it("starts a web app with HTTPD", func() {
@@ -218,7 +217,7 @@ func testContributor(t *testing.T, when spec.G, it spec.S) {
 		when("it's a web app", func() {
 			it.Before(func() {
 				buildDir := filepath.Join(f.Build.Application.Root, "htdocs", "index.php")
-				helper.WriteFile(buildDir, 0644, "junk")
+				Expect(helper.WriteFile(buildDir, 0644, "junk")).To(Succeed())
 			})
 
 			it("contributes a php.ini file & configures PHP to look at it for a web app", func() {
