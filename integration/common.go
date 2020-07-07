@@ -6,20 +6,32 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/dagger"
+	"github.com/BurntSushi/toml"
 
 	. "github.com/onsi/gomega"
 )
 
 var (
 	phpDistURI, httpdURI, nginxURI, phpWebURI string
+	buildpackInfo struct {
+		Buildpack struct {
+			ID   string
+			Name string
+		}
+	}
 )
 
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
-	bpRoot, err := dagger.FindBPRoot()
-	if err != nil {
-		return err
-	}
+	bpRoot, err := filepath.Abs("./..")
+	Expect(err).ToNot(HaveOccurred())
+
+	file, err := os.Open("../buildpack.toml")
+	Expect(err).NotTo(HaveOccurred())
+	defer file.Close()
+
+	_, err = toml.DecodeReader(file, &buildpackInfo)
+	Expect(err).NotTo(HaveOccurred())
 
 	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
 	if err != nil {
