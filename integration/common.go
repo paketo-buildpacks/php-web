@@ -6,25 +6,52 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/dagger"
+	"github.com/BurntSushi/toml"
 
 	. "github.com/onsi/gomega"
 )
 
 var (
-	phpDistURI, httpdURI, nginxURI, phpWebURI string
+	phpDistURI              string
+	phpDistOfflineURI       string
+	httpdURI					      string
+	httpdOfflineURI					string
+	nginxURI					      string
+	nginxOfflineURI					string
+	phpWebURI					      string
+	phpWebOfflineURI	      string
+	buildpackInfo           struct {
+		Buildpack struct {
+			ID   string
+			Name string
+		}
+	}
 )
 
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
-	bpRoot, err := dagger.FindBPRoot()
-	if err != nil {
-		return err
-	}
+	bpRoot, err := filepath.Abs("./..")
+	Expect(err).ToNot(HaveOccurred())
 
+	file, err := os.Open("../buildpack.toml")
+	Expect(err).NotTo(HaveOccurred())
+	defer file.Close()
+
+	_, err = toml.DecodeReader(file, &buildpackInfo)
+	Expect(err).NotTo(HaveOccurred())
+
+	// Later todo: These buildpack urls redirect from the old cf cnb urls.
+	// When rewriting with packit, change them.
 	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
 	if err != nil {
 		return err
 	}
+
+	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	phpDistOfflineURI, _, err = dagger.PackageCachedBuildpack(phpDistRepo)
+	Expect(err).ToNot(HaveOccurred())
 
 	httpdURI, err = dagger.GetLatestBuildpack("httpd-cnb")
 	if err != nil {
@@ -36,7 +63,29 @@ func PreparePhpBps() error {
 		return err
 	}
 
+	nginxRepo, err := dagger.GetLatestUnpackagedBuildpack("nginx-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxOfflineURI, _, err = dagger.PackageCachedBuildpack(nginxRepo)
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxOfflineURI = fmt.Sprintf("%s.tgz", nginxOfflineURI)
+
+	httpdRepo, err := dagger.GetLatestUnpackagedBuildpack("httpd-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	httpdOfflineURI, _, err = dagger.PackageCachedBuildpack(httpdRepo)
+	Expect(err).ToNot(HaveOccurred())
+
+	httpdOfflineURI = fmt.Sprintf("%s.tgz", httpdOfflineURI)
+
 	phpWebURI, err = dagger.PackageBuildpack(bpRoot)
+	if err != nil {
+		return err
+	}
+
+
+	phpWebOfflineURI, _, err = dagger.PackageCachedBuildpack(bpRoot)
 	if err != nil {
 		return err
 	}
@@ -46,7 +95,7 @@ func PreparePhpBps() error {
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, httpdURI, nginxURI, phpWebURI} {
+	for _, bp := range []string{phpDistURI, phpDistOfflineURI, httpdURI, httpdOfflineURI, nginxURI, nginxOfflineURI, phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
