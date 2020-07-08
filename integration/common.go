@@ -12,8 +12,15 @@ import (
 )
 
 var (
-	phpDistURI, httpdURI, nginxURI, phpWebURI string
-	buildpackInfo struct {
+	phpDistURI              string
+	phpDistOfflineURI       string
+	httpdURI					      string
+	httpdOfflineURI					string
+	nginxURI					      string
+	nginxOfflineURI					string
+	phpWebURI					      string
+	phpWebOfflineURI	      string
+	buildpackInfo           struct {
 		Buildpack struct {
 			ID   string
 			Name string
@@ -38,6 +45,12 @@ func PreparePhpBps() error {
 		return err
 	}
 
+	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	phpDistOfflineURI, _, err = dagger.PackageCachedBuildpack(phpDistRepo)
+	Expect(err).ToNot(HaveOccurred())
+
 	httpdURI, err = dagger.GetLatestBuildpack("httpd-cnb")
 	if err != nil {
 		return err
@@ -48,7 +61,29 @@ func PreparePhpBps() error {
 		return err
 	}
 
+	nginxRepo, err := dagger.GetLatestUnpackagedBuildpack("nginx-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxOfflineURI, _, err = dagger.PackageCachedBuildpack(nginxRepo)
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxOfflineURI = fmt.Sprintf("%s.tgz", nginxOfflineURI)
+
+	httpdRepo, err := dagger.GetLatestUnpackagedBuildpack("httpd-cnb")
+	Expect(err).ToNot(HaveOccurred())
+
+	httpdOfflineURI, _, err = dagger.PackageCachedBuildpack(httpdRepo)
+	Expect(err).ToNot(HaveOccurred())
+
+	httpdOfflineURI = fmt.Sprintf("%s.tgz", httpdOfflineURI)
+
 	phpWebURI, err = dagger.PackageBuildpack(bpRoot)
+	if err != nil {
+		return err
+	}
+
+
+	phpWebOfflineURI, _, err = dagger.PackageCachedBuildpack(bpRoot)
 	if err != nil {
 		return err
 	}
@@ -58,7 +93,7 @@ func PreparePhpBps() error {
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, httpdURI, nginxURI, phpWebURI} {
+	for _, bp := range []string{phpDistURI, phpDistOfflineURI, httpdURI, httpdOfflineURI, nginxURI, nginxOfflineURI, phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
