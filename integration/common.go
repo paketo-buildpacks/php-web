@@ -1,12 +1,16 @@
 package integration
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/dagger"
 	"github.com/BurntSushi/toml"
+	"github.com/paketo-buildpacks/packit/pexec"
 
 	. "github.com/onsi/gomega"
 )
@@ -20,6 +24,7 @@ var (
 	nginxOfflineURI					string
 	phpWebURI					      string
 	phpWebOfflineURI	      string
+	version                 string
 	buildpackInfo           struct {
 		Buildpack struct {
 			ID   string
@@ -38,6 +43,9 @@ func PreparePhpBps() error {
 	defer file.Close()
 
 	_, err = toml.DecodeReader(file, &buildpackInfo)
+	Expect(err).NotTo(HaveOccurred())
+
+	version, err = GetGitVersion()
 	Expect(err).NotTo(HaveOccurred())
 
 	// Later todo: These buildpack urls redirect from the old cf cnb urls.
@@ -79,11 +87,8 @@ func PreparePhpBps() error {
 
 	httpdOfflineURI = fmt.Sprintf("%s.tgz", httpdOfflineURI)
 
-	phpWebURI, err = dagger.PackageBuildpack(bpRoot)
-	if err != nil {
-		return err
-	}
-
+	phpWebURI, err = Package(bpRoot, version, false)
+	Expect(err).ToNot(HaveOccurred())
 
 	phpWebOfflineURI, _, err = dagger.PackageCachedBuildpack(bpRoot)
 	if err != nil {
@@ -156,4 +161,51 @@ func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, 
 	}
 
 	return app, nil
+}
+
+func Package(root, version string, cached bool) (string, error) {
+	var cmd *exec.Cmd
+
+	bpPath := filepath.Join(root, "artifact")
+	if cached {
+		cmd = exec.Command(".bin/packager", "--archive", "--version", version, fmt.Sprintf("%s-cached", bpPath))
+	} else {
+		cmd = exec.Command(".bin/packager", "--archive", "--uncached", "--version", version, bpPath)
+	}
+
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PACKAGE_DIR=%s", bpPath))
+	cmd.Dir = root
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+
+	if cached {
+		return fmt.Sprintf("%s-cached.tgz", bpPath), err
+	}
+
+	return fmt.Sprintf("%s.tgz", bpPath), err
+}
+
+func GetGitVersion() (string, error) {
+	gitExec := pexec.NewExecutable("git")
+	revListOut := bytes.NewBuffer(nil)
+
+	err := gitExec.Execute(pexec.Execution{
+		Args:   []string{"rev-list", "--tags", "--max-count=1"},
+		Stdout: revListOut,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	stdout := bytes.NewBuffer(nil)
+	err = gitExec.Execute(pexec.Execution{
+		Args:   []string{"describe", "--tags", strings.TrimSpace(revListOut.String())},
+		Stdout: stdout,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(strings.TrimPrefix(stdout.String(), "v")), nil
 }
