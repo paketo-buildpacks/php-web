@@ -74,26 +74,20 @@ func PreparePhpBps() error {
 	nginxRepo, err := dagger.GetLatestUnpackagedBuildpack("nginx-cnb")
 	Expect(err).ToNot(HaveOccurred())
 
-	nginxOfflineURI, _, err = dagger.PackageCachedBuildpack(nginxRepo)
+	nginxOfflineURI, err = Package(nginxRepo, bpRoot, "1.2.3", true)
 	Expect(err).ToNot(HaveOccurred())
-
-	nginxOfflineURI = fmt.Sprintf("%s.tgz", nginxOfflineURI)
 
 	httpdRepo, err := dagger.GetLatestUnpackagedBuildpack("httpd-cnb")
 	Expect(err).ToNot(HaveOccurred())
 
-	httpdOfflineURI, _, err = dagger.PackageCachedBuildpack(httpdRepo)
+	httpdOfflineURI, err = Package(httpdRepo, bpRoot, "1.2.3", true)
 	Expect(err).ToNot(HaveOccurred())
 
-	httpdOfflineURI = fmt.Sprintf("%s.tgz", httpdOfflineURI)
-
-	phpWebURI, err = Package(bpRoot, version, false)
+	phpWebURI, err = Package(bpRoot, bpRoot, version, false)
 	Expect(err).ToNot(HaveOccurred())
 
-	phpWebOfflineURI, _, err = dagger.PackageCachedBuildpack(bpRoot)
-	if err != nil {
-		return err
-	}
+	phpWebOfflineURI, err = Package(bpRoot, bpRoot, version, true)
+	Expect(err).ToNot(HaveOccurred())
 
 	return nil
 }
@@ -163,7 +157,7 @@ func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, 
 	return app, nil
 }
 
-func Package(root, version string, cached bool) (string, error) {
+func Package(root, packagerRoot, version string, cached bool) (string, error) {
 	var cmd *exec.Cmd
 
 	bpPath := filepath.Join(root, "artifact")
@@ -174,7 +168,7 @@ func Package(root, version string, cached bool) (string, error) {
 	}
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PACKAGE_DIR=%s", bpPath))
-	cmd.Dir = root
+	cmd.Dir = packagerRoot
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
