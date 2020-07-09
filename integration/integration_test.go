@@ -40,7 +40,8 @@ func TestIntegration(t *testing.T) {
 	err := PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
 
-	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
+	spec.Run(t, "Online", testIntegration, spec.Report(report.Terminal{}))
+	spec.Run(t, "Offline", testOffline, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
 }
 
@@ -120,7 +121,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
-			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/paketo-buildpacks_php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -137,7 +138,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
-			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/paketo-buildpacks_php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
 
 			resp, _, err := app.HTTPGet("/status?auto")
@@ -150,7 +151,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
-			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/paketo-buildpacks_php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
@@ -167,7 +168,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
-			Expect(app.BuildLogs()).To(ContainSubstring("web: procmgr /layers/paketo-buildpacks_php-web/php-web/procs.yml"))
+			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
 
 			// changed in custom-http.conf
