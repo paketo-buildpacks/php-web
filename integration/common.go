@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/dagger"
 	"github.com/BurntSushi/toml"
+	"github.com/cloudfoundry/dagger"
 	"github.com/paketo-buildpacks/occam"
 	"github.com/paketo-buildpacks/packit/pexec"
 
@@ -20,16 +20,16 @@ import (
 )
 
 var (
-	phpDistURI              string
-	phpDistOfflineURI       string
-	httpdURI					      string
-	httpdOfflineURI					string
-	nginxURI					      string
-	nginxOfflineURI					string
-	phpWebURI					      string
-	phpWebOfflineURI	      string
-	version                 string
-	buildpackInfo           struct {
+	phpDistURI        string
+	phpDistOfflineURI string
+	httpdURI          string
+	httpdOfflineURI   string
+	nginxURI          string
+	nginxOfflineURI   string
+	phpWebURI         string
+	phpWebOfflineURI  string
+	version           string
+	buildpackInfo     struct {
 		Buildpack struct {
 			ID   string
 			Name string
@@ -40,8 +40,8 @@ var (
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
 	var config struct {
-		 Httpd string `json:"httpd"`
-		 Nginx string `json:"nginx"`
+		Httpd string `json:"httpd"`
+		Nginx string `json:"nginx"`
 	}
 
 	file, err := os.Open("../integration.json")
@@ -90,10 +90,10 @@ func PreparePhpBps() error {
 	nginxOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.Nginx)
 	Expect(err).ToNot(HaveOccurred())
 
-	phpWebURI, err = Package(bpRoot, bpRoot, version, false)
+	phpWebURI, err = Package(bpRoot, version, false)
 	Expect(err).ToNot(HaveOccurred())
 
-	phpWebOfflineURI, err = Package(bpRoot, bpRoot, version, true)
+	phpWebOfflineURI, err = Package(bpRoot, version, true)
 	Expect(err).ToNot(HaveOccurred())
 
 	return nil
@@ -164,7 +164,7 @@ func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, 
 	return app, nil
 }
 
-func Package(root, packagerRoot, version string, cached bool) (string, error) {
+func Package(root, version string, cached bool) (string, error) {
 	var cmd *exec.Cmd
 
 	bpPath := filepath.Join(root, "artifact")
@@ -175,7 +175,7 @@ func Package(root, packagerRoot, version string, cached bool) (string, error) {
 	}
 
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PACKAGE_DIR=%s", bpPath))
-	cmd.Dir = packagerRoot
+	cmd.Dir = root
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
