@@ -40,10 +40,8 @@ func TestIntegration(t *testing.T) {
 	err := PreparePhpBps()
 	Expect(err).ToNot(HaveOccurred())
 
-	suite := spec.New("Integration", spec.Parallel(), spec.Report(report.Terminal{}))
-	suite("Offline", testOffline)
-	suite("Online", testIntegration)
-	suite.Run(t)
+	spec.Run(t, "Online", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
+	spec.Run(t, "Offline", testOffline, spec.Report(report.Terminal{}), spec.Parallel())
 	CleanUpBps()
 }
 
