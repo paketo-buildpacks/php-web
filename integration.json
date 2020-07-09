@@ -1,0 +1,4 @@
+{
+  "httpd": "github.com/paketo-buildpacks/httpd",
+  "nginx": "github.com/paketo-buildpacks/nginx"
+}

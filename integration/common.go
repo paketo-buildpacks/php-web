@@ -1,52 +1,107 @@
 package integration
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/dagger"
+	"github.com/BurntSushi/toml"
+	"github.com/paketo-buildpacks/occam"
+	"github.com/paketo-buildpacks/packit/pexec"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var (
-	phpDistURI, httpdURI, nginxURI, phpWebURI string
+	phpDistURI              string
+	phpDistOfflineURI       string
+	httpdURI					      string
+	httpdOfflineURI					string
+	nginxURI					      string
+	nginxOfflineURI					string
+	phpWebURI					      string
+	phpWebOfflineURI	      string
+	version                 string
+	buildpackInfo           struct {
+		Buildpack struct {
+			ID   string
+			Name string
+		}
+	}
 )
 
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
-	bpRoot, err := dagger.FindBPRoot()
-	if err != nil {
-		return err
+	var config struct {
+		 Httpd string `json:"httpd"`
+		 Nginx string `json:"nginx"`
 	}
 
+	file, err := os.Open("../integration.json")
+	Expect(err).ToNot(HaveOccurred())
+	defer file.Close()
+
+	Expect(json.NewDecoder(file).Decode(&config)).To(Succeed())
+
+	bpRoot, err := filepath.Abs("./..")
+	Expect(err).ToNot(HaveOccurred())
+
+	file, err = os.Open("../buildpack.toml")
+	Expect(err).NotTo(HaveOccurred())
+	defer file.Close()
+
+	_, err = toml.DecodeReader(file, &buildpackInfo)
+	Expect(err).NotTo(HaveOccurred())
+
+	version, err = GetGitVersion()
+	Expect(err).NotTo(HaveOccurred())
+
+	buildpackStore := occam.NewBuildpackStore()
+
+	// Later todo: These buildpack urls redirect from the old cf cnb urls.
+	// When rewriting with packit, change them.
 	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
 	if err != nil {
 		return err
 	}
 
-	httpdURI, err = dagger.GetLatestBuildpack("httpd-cnb")
-	if err != nil {
-		return err
-	}
+	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
+	Expect(err).ToNot(HaveOccurred())
 
-	nginxURI, err = dagger.GetLatestBuildpack("nginx-cnb")
-	if err != nil {
-		return err
-	}
+	phpDistOfflineURI, _, err = dagger.PackageCachedBuildpack(phpDistRepo)
+	Expect(err).ToNot(HaveOccurred())
 
-	phpWebURI, err = dagger.PackageBuildpack(bpRoot)
-	if err != nil {
-		return err
-	}
+	httpdURI, err = buildpackStore.Get.Execute(config.Httpd)
+	Expect(err).ToNot(HaveOccurred())
+
+	httpdOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.Httpd)
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxURI, err = buildpackStore.Get.Execute(config.Nginx)
+	Expect(err).ToNot(HaveOccurred())
+
+	nginxOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.Nginx)
+	Expect(err).ToNot(HaveOccurred())
+
+	phpWebURI, err = Package(bpRoot, bpRoot, version, false)
+	Expect(err).ToNot(HaveOccurred())
+
+	phpWebOfflineURI, err = Package(bpRoot, bpRoot, version, true)
+	Expect(err).ToNot(HaveOccurred())
 
 	return nil
 }
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, httpdURI, nginxURI, phpWebURI} {
+	for _, bp := range []string{phpDistURI, phpDistOfflineURI, phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
@@ -107,4 +162,104 @@ func PushSimpleApp(name string, buildpacks []string, script bool) (*dagger.App, 
 	}
 
 	return app, nil
+}
+
+func Package(root, packagerRoot, version string, cached bool) (string, error) {
+	var cmd *exec.Cmd
+
+	bpPath := filepath.Join(root, "artifact")
+	if cached {
+		cmd = exec.Command(".bin/packager", "--archive", "--version", version, fmt.Sprintf("%s-cached", bpPath))
+	} else {
+		cmd = exec.Command(".bin/packager", "--archive", "--uncached", "--version", version, bpPath)
+	}
+
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PACKAGE_DIR=%s", bpPath))
+	cmd.Dir = packagerRoot
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+
+	if cached {
+		return fmt.Sprintf("%s-cached.tgz", bpPath), err
+	}
+
+	return fmt.Sprintf("%s.tgz", bpPath), err
+}
+
+func GetGitVersion() (string, error) {
+	gitExec := pexec.NewExecutable("git")
+	revListOut := bytes.NewBuffer(nil)
+
+	err := gitExec.Execute(pexec.Execution{
+		Args:   []string{"rev-list", "--tags", "--max-count=1"},
+		Stdout: revListOut,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	stdout := bytes.NewBuffer(nil)
+	err = gitExec.Execute(pexec.Execution{
+		Args:   []string{"describe", "--tags", strings.TrimSpace(revListOut.String())},
+		Stdout: stdout,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(strings.TrimPrefix(stdout.String(), "v")), nil
+}
+
+// later todo: move this matcher to occam
+func BeAvailableAndReady() types.GomegaMatcher {
+	return &BeAvailableAndReadyMatcher{
+		Docker: occam.NewDocker(),
+	}
+}
+
+type BeAvailableAndReadyMatcher struct {
+	Docker occam.Docker
+}
+
+func (*BeAvailableAndReadyMatcher) Match(actual interface{}) (bool, error) {
+	container, ok := actual.(occam.Container)
+	if !ok {
+		return false, fmt.Errorf("BeAvailableMatcher expects an occam.Container, received %T", actual)
+	}
+
+	response, err := http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort()))
+	if err != nil {
+		return false, nil
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return false, nil
+	}
+
+	defer response.Body.Close()
+
+	return true, nil
+}
+
+func (m *BeAvailableAndReadyMatcher) FailureMessage(actual interface{}) string {
+	container := actual.(occam.Container)
+	message := fmt.Sprintf("Expected\n\tdocker container id: %s\nto be available.", container.ID)
+
+	if logs, _ := m.Docker.Container.Logs.Execute(container.ID); logs != nil {
+		message = fmt.Sprintf("%s\n\nContainer logs:\n\n%s", message, logs)
+	}
+
+	return message
+}
+
+func (m *BeAvailableAndReadyMatcher) NegatedFailureMessage(actual interface{}) string {
+	container := actual.(occam.Container)
+	message := fmt.Sprintf("Expected\n\tdocker container id: %s\nnot to be available.", container.ID)
+
+	if logs, _ := m.Docker.Container.Logs.Execute(container.ID); logs != nil {
+		message = fmt.Sprintf("%s\n\nContainer logs:\n\n%s", message, logs)
+	}
+
+	return message
 }
