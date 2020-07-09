@@ -1,5 +1,4 @@
 {
   "httpd": "github.com/paketo-buildpacks/httpd",
-  "nginx": "github.com/paketo-buildpacks/nginx",
-  "php-dist": "github.com/paketo-buildpacks/php-dist"
+  "nginx": "github.com/paketo-buildpacks/nginx"
 }

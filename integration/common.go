@@ -2,7 +2,9 @@ package integration
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,9 +12,11 @@ import (
 
 	"github.com/cloudfoundry/dagger"
 	"github.com/BurntSushi/toml"
+	"github.com/paketo-buildpacks/occam"
 	"github.com/paketo-buildpacks/packit/pexec"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 var (
@@ -35,10 +39,21 @@ var (
 
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
+	var config struct {
+		 Httpd string `json:"httpd"`
+		 Nginx string `json:"nginx"`
+	}
+
+	file, err := os.Open("../integration.json")
+	Expect(err).ToNot(HaveOccurred())
+	defer file.Close()
+
+	Expect(json.NewDecoder(file).Decode(&config)).To(Succeed())
+
 	bpRoot, err := filepath.Abs("./..")
 	Expect(err).ToNot(HaveOccurred())
 
-	file, err := os.Open("../buildpack.toml")
+	file, err = os.Open("../buildpack.toml")
 	Expect(err).NotTo(HaveOccurred())
 	defer file.Close()
 
@@ -47,6 +62,8 @@ func PreparePhpBps() error {
 
 	version, err = GetGitVersion()
 	Expect(err).NotTo(HaveOccurred())
+
+	buildpackStore := occam.NewBuildpackStore()
 
 	// Later todo: These buildpack urls redirect from the old cf cnb urls.
 	// When rewriting with packit, change them.
@@ -61,26 +78,16 @@ func PreparePhpBps() error {
 	phpDistOfflineURI, _, err = dagger.PackageCachedBuildpack(phpDistRepo)
 	Expect(err).ToNot(HaveOccurred())
 
-	httpdURI, err = dagger.GetLatestBuildpack("httpd-cnb")
-	if err != nil {
-		return err
-	}
-
-	nginxURI, err = dagger.GetLatestBuildpack("nginx-cnb")
-	if err != nil {
-		return err
-	}
-
-	nginxRepo, err := dagger.GetLatestUnpackagedBuildpack("nginx-cnb")
+	httpdURI, err = buildpackStore.Get.Execute(config.Httpd)
 	Expect(err).ToNot(HaveOccurred())
 
-	nginxOfflineURI, err = Package(nginxRepo, bpRoot, "1.2.3", true)
+	httpdOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.Httpd)
 	Expect(err).ToNot(HaveOccurred())
 
-	httpdRepo, err := dagger.GetLatestUnpackagedBuildpack("httpd-cnb")
+	nginxURI, err = buildpackStore.Get.Execute(config.Nginx)
 	Expect(err).ToNot(HaveOccurred())
 
-	httpdOfflineURI, err = Package(httpdRepo, bpRoot, "1.2.3", true)
+	nginxOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.Nginx)
 	Expect(err).ToNot(HaveOccurred())
 
 	phpWebURI, err = Package(bpRoot, bpRoot, version, false)
@@ -94,7 +101,7 @@ func PreparePhpBps() error {
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, phpDistOfflineURI, httpdURI, httpdOfflineURI, nginxURI, nginxOfflineURI, phpWebURI, phpWebOfflineURI} {
+	for _, bp := range []string{phpDistURI, phpDistOfflineURI, phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
@@ -202,4 +209,57 @@ func GetGitVersion() (string, error) {
 	}
 
 	return strings.TrimSpace(strings.TrimPrefix(stdout.String(), "v")), nil
+}
+
+// later todo: move this matcher to occam
+func BeAvailableAndReady() types.GomegaMatcher {
+	return &BeAvailableAndReadyMatcher{
+		Docker: occam.NewDocker(),
+	}
+}
+
+type BeAvailableAndReadyMatcher struct {
+	Docker occam.Docker
+}
+
+func (*BeAvailableAndReadyMatcher) Match(actual interface{}) (bool, error) {
+	container, ok := actual.(occam.Container)
+	if !ok {
+		return false, fmt.Errorf("BeAvailableMatcher expects an occam.Container, received %T", actual)
+	}
+
+	response, err := http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort()))
+	if err != nil {
+		return false, nil
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return false, nil
+	}
+
+	defer response.Body.Close()
+
+	return true, nil
+}
+
+func (m *BeAvailableAndReadyMatcher) FailureMessage(actual interface{}) string {
+	container := actual.(occam.Container)
+	message := fmt.Sprintf("Expected\n\tdocker container id: %s\nto be available.", container.ID)
+
+	if logs, _ := m.Docker.Container.Logs.Execute(container.ID); logs != nil {
+		message = fmt.Sprintf("%s\n\nContainer logs:\n\n%s", message, logs)
+	}
+
+	return message
+}
+
+func (m *BeAvailableAndReadyMatcher) NegatedFailureMessage(actual interface{}) string {
+	container := actual.(occam.Container)
+	message := fmt.Sprintf("Expected\n\tdocker container id: %s\nnot to be available.", container.ID)
+
+	if logs, _ := m.Docker.Container.Logs.Execute(container.ID); logs != nil {
+		message = fmt.Sprintf("%s\n\nContainer logs:\n\n%s", message, logs)
+	}
+
+	return message
 }

@@ -102,10 +102,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT":"8080"}).Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(container).Should(BeAvailable(), logs.String())
-
-			// later TODO: wait until the web server connects to php
-			time.Sleep(5 * time.Second)
+			Eventually(container).Should(BeAvailableAndReady(), logs.String())
 
 			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort()))
 			Expect(err).NotTo(HaveOccurred())
@@ -137,10 +134,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT":"8080"}).Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(container).Should(BeAvailable(), logs.String())
-
-			// later TODO: wait until the web server connects to php
-			time.Sleep(5 * time.Second)
+			Eventually(container).Should(BeAvailableAndReady(), logs.String())
 
 			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort()))
 			Expect(err).NotTo(HaveOccurred())
