@@ -40,8 +40,9 @@ var (
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
 	var config struct {
-		Httpd string `json:"httpd"`
-		Nginx string `json:"nginx"`
+		Httpd   string `json:"httpd"`
+		Nginx   string `json:"nginx"`
+		PhpDist string `json:"php-dist"`
 	}
 
 	file, err := os.Open("../integration.json")
@@ -65,12 +66,8 @@ func PreparePhpBps() error {
 
 	buildpackStore := occam.NewBuildpackStore()
 
-	// Later todo: These buildpack urls redirect from the old cf cnb urls.
-	// When rewriting with packit, change them.
-	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
-	if err != nil {
-		return err
-	}
+	phpDistURI, err = buildpackStore.Get.Execute(config.PhpDist)
+	Expect(err).ToNot(HaveOccurred())
 
 	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
 	Expect(err).ToNot(HaveOccurred())
