@@ -69,10 +69,7 @@ func PreparePhpBps() error {
 	phpDistURI, err = buildpackStore.Get.Execute(config.PhpDist)
 	Expect(err).ToNot(HaveOccurred())
 
-	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
-	Expect(err).ToNot(HaveOccurred())
-
-	phpDistOfflineURI, err = Package(phpDistRepo, "1.2.3", true)
+	phpDistOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.PhpDist)
 	Expect(err).ToNot(HaveOccurred())
 
 	httpdURI, err = buildpackStore.Get.Execute(config.Httpd)
@@ -98,7 +95,7 @@ func PreparePhpBps() error {
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, phpDistOfflineURI, phpWebURI, phpWebOfflineURI} {
+	for _, bp := range []string{phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
