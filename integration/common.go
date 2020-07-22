@@ -40,8 +40,9 @@ var (
 // PreparePhpBps builds the current buildpacks
 func PreparePhpBps() error {
 	var config struct {
-		Httpd string `json:"httpd"`
-		Nginx string `json:"nginx"`
+		Httpd   string `json:"httpd"`
+		Nginx   string `json:"nginx"`
+		PhpDist string `json:"php-dist"`
 	}
 
 	file, err := os.Open("../integration.json")
@@ -65,17 +66,10 @@ func PreparePhpBps() error {
 
 	buildpackStore := occam.NewBuildpackStore()
 
-	// Later todo: These buildpack urls redirect from the old cf cnb urls.
-	// When rewriting with packit, change them.
-	phpDistURI, err = dagger.GetLatestBuildpack("php-dist-cnb")
-	if err != nil {
-		return err
-	}
-
-	phpDistRepo, err := dagger.GetLatestUnpackagedBuildpack("php-dist-cnb")
+	phpDistURI, err = buildpackStore.Get.Execute(config.PhpDist)
 	Expect(err).ToNot(HaveOccurred())
 
-	phpDistOfflineURI, err = Package(phpDistRepo, "1.2.3", true)
+	phpDistOfflineURI, err = buildpackStore.Get.WithOfflineDependencies().Execute(config.PhpDist)
 	Expect(err).ToNot(HaveOccurred())
 
 	httpdURI, err = buildpackStore.Get.Execute(config.Httpd)
@@ -101,7 +95,7 @@ func PreparePhpBps() error {
 
 // CleanUpBps removes the packaged buildpacks
 func CleanUpBps() {
-	for _, bp := range []string{phpDistURI, phpDistOfflineURI, phpWebURI, phpWebOfflineURI} {
+	for _, bp := range []string{phpWebURI, phpWebOfflineURI} {
 		Expect(dagger.DeleteBuildpack(bp)).To(Succeed())
 	}
 }
