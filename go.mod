@@ -8,7 +8,7 @@ require (
 	github.com/cloudfoundry/dagger v0.0.0-20200710140748-bed4cf02eaf9
 	github.com/cloudfoundry/libcfbuildpack v1.91.23
 	github.com/onsi/gomega v1.10.1
-	github.com/paketo-buildpacks/occam v0.0.16
+	github.com/paketo-buildpacks/occam v0.0.17
 	github.com/paketo-buildpacks/packit v0.2.3
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
