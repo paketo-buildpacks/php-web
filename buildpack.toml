@@ -2,7 +2,7 @@ api = "0.2"
 
 [buildpack]
 id = "paketo-buildpacks/php-web"
-name = "PHP Web Buildpack"
+name = "Paketo PHP Web Buildpack"
 version = "{{ .Version }}"
 homepage = "https://github.com/paketo-buildpacks/php-web"
 
