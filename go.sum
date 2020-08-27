@@ -28,6 +28,7 @@ github.com/buildpack/libbuildpack v1.25.11/go.mod h1:Fb1Eg3vT+B3i5l46aF6WsW7naCA
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cheggaaa/pb/v3 v3.0.4 h1:QZEPYOj2ix6d5oEg63fbHmpolrnNiwjUsk+h74Yt4bM=
 github.com/cheggaaa/pb/v3 v3.0.4/go.mod h1:7rgWxLrAUcFMkvJuv09+DYi7mMUYi8nO9iOWcvGJPfw=
+github.com/cheggaaa/pb/v3 v3.0.5 h1:lmZOti7CraK9RSjzExsY53+WWfub9Qv13B5m4ptEoPE=
 github.com/cheggaaa/pb/v3 v3.0.5/go.mod h1:X1L61/+36nz9bjIsrDU52qHKOQukUQe2Ge+YvGuquCw=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
@@ -147,6 +148,8 @@ github.com/paketo-buildpacks/occam v0.0.16 h1:RnEizv5F5O5LL1VeOiOh8WkNosybbEPOMy
 github.com/paketo-buildpacks/occam v0.0.16/go.mod h1:i3WI2yc5Nji45iNpW+IiiEy3f2BvbIfbLi24VKVOK0I=
 github.com/paketo-buildpacks/occam v0.0.17 h1:djTYtqfREwbTy+KlwscOUjN9ZIPld1uP3sTw4Fdr0L0=
 github.com/paketo-buildpacks/occam v0.0.17/go.mod h1:9TFuRmC3OB8DlaBdd0hGPZQidnsmGmUlnLQTrltZB5Q=
+github.com/paketo-buildpacks/occam v0.0.18 h1:0n3ew3aLyk/CjZJY+QsW6UTS1d7k6seDylABnZwUuig=
+github.com/paketo-buildpacks/occam v0.0.18/go.mod h1:+QD+nyd/F1Ky+MmyxslDWio4cJCRiGXFVShVbteHr7U=
 github.com/paketo-buildpacks/packit v0.1.0 h1:4kmSfE9+ZuudfbCaT58vX0DtLNPU4QXmV9lIiGgxWZo=
 github.com/paketo-buildpacks/packit v0.1.0/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
 github.com/paketo-buildpacks/packit v0.2.1 h1:MWvvGkj83clltK0kqF1+wHjcfWmGTRe254h8s3PZyF4=
@@ -175,6 +178,7 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=
 github.com/ulikunitz/xz v0.5.7/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+github.com/ulikunitz/xz v0.5.8 h1:ERv8V6GKqVi23rgu5cj9pVfVzJbOqAY2Ntl88O6c2nQ=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofmx9yWTog9BfvIu0q41lo=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
