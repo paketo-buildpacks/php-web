@@ -18,9 +18,9 @@ import (
 
 func testOffline(t *testing.T, context spec.G, it spec.S) {
 	var (
-		Expect     = NewWithT(t).Expect
-		pack       occam.Pack
-		docker     occam.Docker
+		Expect = NewWithT(t).Expect
+		pack   occam.Pack
+		docker occam.Docker
 	)
 
 	SetDefaultEventuallyTimeout(10 * time.Second)
@@ -58,7 +58,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 
 			var logs fmt.Stringer
 			image, logs, err = pack.WithNoColor().Build.
-				WithNoPull().
+				WithPullPolicy("never").
 				WithBuildpacks(phpDistOfflineURI, phpWebOfflineURI).
 				WithNetwork("none").
 				Execute(name, source)
@@ -67,7 +67,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT":"8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable(), logs.String())
@@ -90,7 +90,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 
 			var logs fmt.Stringer
 			image, logs, err = pack.WithNoColor().Build.
-				WithNoPull().
+				WithPullPolicy("never").
 				WithBuildpacks(nginxOfflineURI, phpDistOfflineURI, phpWebOfflineURI).
 				WithNetwork("none").
 				Execute(name, source)
@@ -99,7 +99,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT":"8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailableAndReady(), logs.String())
@@ -122,7 +122,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 
 			var logs fmt.Stringer
 			image, logs, err = pack.WithNoColor().Build.
-				WithNoPull().
+				WithPullPolicy("never").
 				WithBuildpacks(httpdOfflineURI, phpDistOfflineURI, phpWebOfflineURI).
 				WithNetwork("none").
 				Execute(name, source)
@@ -131,7 +131,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT":"8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailableAndReady(), logs.String())
