@@ -7,9 +7,9 @@ version = "{{ .Version }}"
 homepage = "https://github.com/paketo-buildpacks/php-web"
 
 [metadata]
-default-version = "7.2.*"
-include-files = ["bin/build","bin/detect","bin/procmgr","bin/session_helper","buildpack.toml"]
-pre-package = "./scripts/build.sh"
+default_version = "7.2.*"
+include_files = ["bin/build","bin/detect","bin/procmgr","bin/session_helper","buildpack.toml"]
+pre_package = "./scripts/build.sh"
 
 [[stacks]]
 id = "org.cloudfoundry.stacks.cflinuxfs3"
