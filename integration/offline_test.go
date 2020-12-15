@@ -67,12 +67,16 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				WithPublishAll().
+				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable(), logs.String())
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php", container.HostPort()))
+			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php", container.HostPort("8080")))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 
@@ -99,12 +103,16 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				WithPublishAll().
+				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailableAndReady(), logs.String())
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort()))
+			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort("8080")))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 
@@ -131,12 +139,16 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs.String()).To(ContainSubstring(buildpackInfo.Buildpack.Name))
 			Expect(logs.String()).NotTo(ContainSubstring("Downloading"))
 
-			container, err = docker.Container.Run.WithEnv(map[string]string{"PORT": "8080"}).Execute(image.ID)
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				WithPublishAll().
+				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(container).Should(BeAvailableAndReady(), logs.String())
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort()))
+			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.php?date", container.HostPort("8080")))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 
