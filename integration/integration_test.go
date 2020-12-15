@@ -277,7 +277,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			// ensure correct version of PHP is installed
-			Expect(app.BuildLogs()).To(MatchRegexp(`Installing PHP 7\.2\.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`Installing PHP 7\.4\.\d+`))
 		})
 
 		when("the app is pushed twice", func() {
