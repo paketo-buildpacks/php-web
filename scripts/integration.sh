@@ -18,6 +18,11 @@ source "${PROGDIR}/.util/git.sh"
 function main() {
   while [[ "${#}" != 0 ]]; do
     case "${1}" in
+      --use-token|-t)
+        shift 1
+        token::fetch
+        ;;
+
       --help|-h)
         shift 1
         usage
@@ -40,7 +45,6 @@ function main() {
 
   tools::install
   images::pull
-  token::fetch
   tests::run
 }
 
@@ -51,7 +55,8 @@ integration.sh [OPTIONS]
 Runs the integration test suite.
 
 OPTIONS
-  --help  -h  prints the command usage
+  --help       -h  prints the command usage
+  --use-token  -t  use GIT_TOKEN from lastpass
 USAGE
 }
 
@@ -59,11 +64,10 @@ function tools::install() {
   util::tools::pack::install \
     --directory "${BUILDPACKDIR}/.bin"
 
-  if [[ -f "${BUILDPACKDIR}/.packit" ]]; then
-    util::tools::jam::install \
-      --directory "${BUILDPACKDIR}/.bin"
+  util::tools::jam::install \
+    --directory "${BUILDPACKDIR}/.bin"
 
-  else
+  if [[ ! -f "${BUILDPACKDIR}/.packit" ]]; then
     util::tools::packager::install \
       --directory "${BUILDPACKDIR}/.bin"
   fi
