@@ -11,8 +11,8 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.0 // indirect
 	github.com/onsi/gomega v1.10.4
-	github.com/paketo-buildpacks/occam v0.0.22
-	github.com/paketo-buildpacks/packit v0.5.0
+	github.com/paketo-buildpacks/occam v0.0.24
+	github.com/paketo-buildpacks/packit v0.6.1
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e // indirect
 	gopkg.in/yaml.v2 v2.4.0
