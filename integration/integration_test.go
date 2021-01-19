@@ -401,7 +401,6 @@ var ExpectedExtensions = [...]string{
 	"fileinfo",
 	"ftp",
 	"gd",
-	"geoip",
 	"gettext",
 	"gmp",
 	"igbinary",
