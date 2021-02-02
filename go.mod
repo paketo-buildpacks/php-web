@@ -10,7 +10,7 @@ require (
 	github.com/cloudfoundry/libcfbuildpack v1.91.23
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.0 // indirect
-	github.com/onsi/gomega v1.10.4
+	github.com/onsi/gomega v1.10.5
 	github.com/paketo-buildpacks/occam v0.0.24
 	github.com/paketo-buildpacks/packit v0.6.1
 	github.com/sclevine/spec v1.4.0
