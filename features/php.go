@@ -1,11 +1,13 @@
 package features
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 	"github.com/paketo-buildpacks/php-web/config"
-	"os"
-	"path/filepath"
 )
 
 type PhpFeature struct {
@@ -44,6 +46,7 @@ func (p PhpFeature) writePhpIni(layer layers.Layer) error {
 	phpIniCfg := config.PhpIniConfig{
 		AppRoot:      p.app.Root,
 		LibDirectory: p.bpYAML.Config.LibDirectory,
+		Extensions:   strings.Split(p.bpYAML.Config.Extensions, ","),
 		PhpHome:      os.Getenv("PHP_HOME"),
 		PhpAPI:       os.Getenv("PHP_API"),
 	}

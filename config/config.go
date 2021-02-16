@@ -106,6 +106,7 @@ type Config struct {
 	WebServer           string    `yaml:"webserver"`
 	WebDirectory        string    `yaml:"webdirectory"`
 	LibDirectory        string    `yaml:"libdirectory"`
+	Extensions          string    `yaml:"extensions"`
 	Script              string    `yaml:"script"`
 	ServerAdmin         string    `yaml:"serveradmin"`
 	EnableHTTPSRedirect bool      `yaml:"enable_https_redirect"`
