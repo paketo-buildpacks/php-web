@@ -32,17 +32,19 @@ the PHP Web CNB without requiring a dependency of it.
 To package this buildpack for consumption:
 
 ```bash
-$ ./scripts/package.sh
+$ ./scripts/package.sh --version <version-number>
 ```
 
-This builds the buildpack's Go source using GOOS=linux by default. You can supply another value as the first argument to package.sh.
+This will create a `buildpackage.cnb` file under the `build` directory which you
+can use to build your app as follows:
+`pack build <app-name> -p <path-to-app> -b build/buildpackage.cnb`
 
 ## License
 This buildpack is released under version 2.0 of the [Apache License][a].
 
 [a]: http://www.apache.org/licenses/LICENSE-2.0
 
- ## `buildpack.yml` Configurations
+## `buildpack.yml` Configurations
 
  ```yaml
  php:
@@ -76,3 +78,9 @@ This buildpack is released under version 2.0 of the [Apache License][a].
   memcached:
     session_store_service_name: memcached-sessions
 ```
+
+## Configuring custom ini files
+
+If you like to configure custom .ini files in addition to the `php.ini`
+provided by the buildpack, you can create a directory named `.php.ini.d` at the
+root of your app and add your custom ini files there.
