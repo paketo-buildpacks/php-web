@@ -1,6 +1,6 @@
 module github.com/paketo-buildpacks/php-web
 
-go 1.12
+go 1.14
 
 require (
 	cloud.google.com/go v0.74.0 // indirect
