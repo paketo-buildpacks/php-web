@@ -49,8 +49,8 @@ This buildpack is released under version 2.0 of the [Apache License][a].
  ```yaml
  php:
   # this allows you to specify a version constaint for the `php` dependency
-  # any valid semver constaints (e.g. 10.* and 10.1.*) are also acceptable
-  version: 10.1.x
+  # any valid semver constaints (e.g. 7.* and 7.4.*) are also acceptable
+  version: 7.4.x
 
   # text user can specify to use PHP's built-in Web Server
   # default: php-server
