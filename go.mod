@@ -13,6 +13,7 @@ require (
 	github.com/paketo-buildpacks/occam v0.1.2
 	github.com/paketo-buildpacks/packit v0.10.2
 	github.com/sclevine/spec v1.4.0
+	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
