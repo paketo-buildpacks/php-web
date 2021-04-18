@@ -169,8 +169,8 @@ http {
         }
 {{end}}
 
-        # Deny hidden files (.htaccess, .htpasswd, .DS_Store).
-        location ~ /\. {
+        # Deny hidden files (.htaccess, .htpasswd, .DS_Store) but allow .well-known locations
+        location ~ /\.(?!well-known).* {
             deny            all;
             access_log      off;
             log_not_found   off;
