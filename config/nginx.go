@@ -169,8 +169,13 @@ http {
         }
 {{end}}
 
-        # Deny hidden files (.htaccess, .htpasswd, .DS_Store) but allow .well-known locations
-        location ~ /\.(?!well-known).* {
+        # Allow "Well-Known URIs" as per RFC 8615
+        location ~* ^/.well-known/ {
+            allow all;
+        }
+        
+        # Deny hidden files (.htaccess, .htpasswd, .DS_Store)
+        location ~ /\. {
             deny            all;
             access_log      off;
             log_not_found   off;
