@@ -54,9 +54,9 @@ LoadModule headers_module modules/mod_headers.so
     Require all granted
 </Directory>
 
-<Files ".ht*">
+<FilesMatch "^\.">
     Require all denied
-</Files>
+</FilesMatch>
 
 # set up mime types
 <IfModule mime_module>
