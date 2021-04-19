@@ -58,7 +58,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 			Expect(result).To(ContainSubstring(`ServerAdmin "test@example.org"`))
 			Expect(result).To(ContainSubstring(`DocumentRoot "/app/htdocs"`))
 			Expect(result).To(ContainSubstring(`<Directory "/app/htdocs">`))
-			Expect(result).To(ContainSubstring(`<Files ".ht*">`))
+			Expect(result).To(ContainSubstring(`<FilesMatch "^\.">`))
 			Expect(result).To(ContainSubstring(`ErrorLog "/proc/self/fd/2"`))
 			Expect(result).To(ContainSubstring(`CustomLog "/proc/self/fd/1" extended`))
 			Expect(result).To(ContainSubstring(`RemoteIpHeader x-forwarded-for`))
