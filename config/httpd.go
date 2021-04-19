@@ -58,6 +58,14 @@ LoadModule headers_module modules/mod_headers.so
     Require all denied
 </FilesMatch>
 
+<DirectoryMatch "^\.|\/\.">
+    Require all denied
+</DirectoryMatch>
+
+<DirectoryMatch "^\.well-known">
+    Require all granted
+</DirectoryMatch>
+
 # set up mime types
 <IfModule mime_module>
     TypesConfig conf/mime.types
