@@ -62,7 +62,7 @@ LoadModule headers_module modules/mod_headers.so
     Require all denied
 </DirectoryMatch>
 
-<DirectoryMatch "^\.well-known">
+<DirectoryMatch /.well-known>
     Require all granted
 </DirectoryMatch>
 
