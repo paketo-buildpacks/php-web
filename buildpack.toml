@@ -1,18 +1,18 @@
 api = "0.4"
 
 [buildpack]
-id = "paketo-buildpacks/php-web"
-name = "Paketo PHP Web Buildpack"
-version = "{{ .Version }}"
-homepage = "https://github.com/paketo-buildpacks/php-web"
+  homepage = "https://github.com/paketo-buildpacks/php-web"
+  id = "paketo-buildpacks/php-web"
+  name = "Paketo PHP Web Buildpack"
+  version = "{{ .Version }}"
 
 [metadata]
-default_version = "7.4.*"
-include_files = ["bin/build","bin/detect","bin/procmgr","bin/session_helper","buildpack.toml"]
-pre_package = "./scripts/build.sh"
+  default_version = "7.4.*"
+  include_files = ["bin/build", "bin/detect", "bin/procmgr", "bin/session_helper", "buildpack.toml"]
+  pre_package = "./scripts/build.sh"
 
 [[stacks]]
-id = "org.cloudfoundry.stacks.cflinuxfs3"
+  id = "org.cloudfoundry.stacks.cflinuxfs3"
 
 [[stacks]]
-id = "io.buildpacks.stacks.bionic"
+  id = "io.buildpacks.stacks.bionic"
