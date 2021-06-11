@@ -11,7 +11,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/onsi/gomega v1.13.0
 	github.com/paketo-buildpacks/occam v0.1.3
-	github.com/paketo-buildpacks/packit v0.12.0
+	github.com/paketo-buildpacks/packit v0.12.1
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84 // indirect
 	gopkg.in/yaml.v2 v2.4.0
