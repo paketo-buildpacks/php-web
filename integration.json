@@ -2,5 +2,5 @@
   "httpd": "github.com/paketo-buildpacks/httpd",
   "nginx": "github.com/paketo-buildpacks/nginx",
   "php-dist": "github.com/paketo-buildpacks/php-dist",
-  "builder":"index.docker.io/paketobuildpacks/builder:full-cf"
+  "builder":"index.docker.io/paketobuildpacks/builder:buildpackless-full"
 }
