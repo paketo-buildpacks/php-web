@@ -20,8 +20,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 
+	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/php-web/config"
 	"github.com/paketo-buildpacks/php-web/features"
 
@@ -56,11 +58,25 @@ func NewContributor(context build.Build) (Contributor, bool, error) {
 		return Contributor{}, false, nil
 	}
 
-	buildpackYAML, err := config.LoadBuildpackYAML(context.Application.Root)
+	buildpackYAML, configMap, err := config.LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return Contributor{}, false, err
 	}
 	context.Logger.Debug("Build Pack YAML: %v", buildpackYAML)
+
+	// if the user-provided buildpack.yml has configurations, warn against it's future deprecation
+	if len(configMap) != 0 {
+		nextMajorVersion := semver.MustParse(context.Buildpack.Info.Version).IncMajor()
+		context.Logger.BodyWarning("WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v%s.", nextMajorVersion.String())
+		for field, envVar := range configMap {
+			if envVar == "service binding" || envVar == "Procfile" {
+				context.Logger.BodyWarning(fmt.Sprintf("In the next buildpack iteration, please specify the %s configuration through a %s instead", field, envVar))
+			} else {
+				context.Logger.BodyWarning(fmt.Sprintf("In the next buildpack iteration, please specify the %s configuration through the %s environment variable instead", field, envVar))
+			}
+
+		}
+	}
 
 	randomHash, err := generateRandomHash()
 	if err != nil {

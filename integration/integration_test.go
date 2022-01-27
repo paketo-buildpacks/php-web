@@ -124,6 +124,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
 
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
+
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp).To(ContainSubstring("SUCCESS"))
@@ -140,6 +143,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
 
 			resp, _, err := app.HTTPGet("/status?auto")
 			Expect(err).ToNot(HaveOccurred())
@@ -153,6 +158,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
 
 			resp, _, err := app.HTTPGet("/index.php?date")
 			Expect(err).ToNot(HaveOccurred())
@@ -170,6 +177,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
 
 			// changed in custom-http.conf
 			resp, headers, err := app.HTTPGet("/test.php?date")
@@ -195,6 +204,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		it("runs a cli app with arguments", func() {
 			app, err := PushSimpleApp("simple_cli_app_with_args", []string{phpDistURI, phpWebURI}, true)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the scripts configuration through a Procfile instead"))
 
 			logs, err := app.Logs()
 			Expect(err).ToNot(HaveOccurred())
@@ -208,6 +219,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
 			err := app.Start()
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
 
 			if err != nil {
 				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
@@ -325,6 +338,8 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			err = app.Start()
 			Expect(err).ToNot(HaveOccurred())
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(ContainSubstring("In the next buildpack iteration, please specify the web server configuration through the BP_PHP_SERVER environment variable instead"))
 
 			body, _, err := app.HTTPGet("/")
 			Expect(err).ToNot(HaveOccurred())

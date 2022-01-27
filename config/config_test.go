@@ -187,7 +187,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 		it("can load an empty buildpack.yaml", func() {
 			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), "")
 
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
+			loaded, configMap, err := LoadBuildpackYAML(f.Detect.Application.Root)
 
 			Expect(err).To(Succeed())
 			Expect(loaded).To(Equal(BuildpackYAML{
@@ -207,13 +207,14 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			}))
+			Expect(len(configMap)).To(Equal(0))
 		})
 
 		it("can load a version & web server", func() {
 			yaml := "{'php': {'version': 1.0.0, 'webserver': 'httpd', 'serveradmin': 'admin@example.com', 'enable_https_redirect': false}}"
 			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
 
-			loaded, err := LoadBuildpackYAML(f.Detect.Application.Root)
+			loaded, configMap, err := LoadBuildpackYAML(f.Detect.Application.Root)
 			actual := BuildpackYAML{
 				Config: Config{
 					Version:             "1.0.0",
@@ -234,6 +235,41 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(err).To(Succeed())
 			Expect(loaded).To(Equal(actual))
+			Expect(configMap).To(Equal(map[string]string{
+				"version":      "BP_PHP_VERSION",
+				"web server":   "BP_PHP_SERVER",
+				"server admin": "BP_PHP_SERVER_ADMIN",
+			}))
+		})
+
+		it("can load a memcache session store and a script", func() {
+			yaml := "{'php': { 'memcached': { 'session_store_service_name': 'memcached-sessions' }, 'script': 'some-script'}}"
+			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
+
+			loaded, configMap, err := LoadBuildpackYAML(f.Detect.Application.Root)
+			actual := BuildpackYAML{
+				Config: Config{
+					WebServer:           "php-server",
+					WebDirectory:        "htdocs",
+					LibDirectory:        "lib",
+					Script:              "some-script",
+					ServerAdmin:         "admin@localhost",
+					EnableHTTPSRedirect: true,
+					Redis: Redis{
+						SessionStoreServiceName: "redis-sessions",
+					},
+					Memcached: Memcached{
+						SessionStoreServiceName: "memcached-sessions",
+					},
+				},
+			}
+
+			Expect(err).To(Succeed())
+			Expect(loaded).To(Equal(actual))
+			Expect(configMap).To(Equal(map[string]string{
+				"memcache session store service name": "service binding",
+				"scripts":                             "Procfile",
+			}))
 		})
 	})
 

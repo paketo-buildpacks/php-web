@@ -124,40 +124,74 @@ type Memcached struct {
 }
 
 // LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
-func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
+func LoadBuildpackYAML(appRoot string) (BuildpackYAML, map[string]string, error) {
 	buildpackYAML, configFile := BuildpackYAML{}, filepath.Join(appRoot, "buildpack.yml")
 
-	buildpackYAML.Config.LibDirectory = "lib"
-	buildpackYAML.Config.WebDirectory = "htdocs"
-	buildpackYAML.Config.WebServer = PhpWebServer
-	buildpackYAML.Config.ServerAdmin = "admin@localhost"
-	buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
-	buildpackYAML.Config.Memcached.SessionStoreServiceName = "memcached-sessions"
 	buildpackYAML.Config.EnableHTTPSRedirect = true
-
 	if exists, err := helper.FileExists(configFile); err != nil {
-		return BuildpackYAML{}, err
+		return BuildpackYAML{}, map[string]string{}, err
 	} else if exists {
 		file, err := os.Open(configFile)
 		if err != nil {
-			return BuildpackYAML{}, err
+			return BuildpackYAML{}, map[string]string{}, err
 		}
 		defer file.Close()
 
 		contents, err := ioutil.ReadAll(file)
 		if err != nil {
-			return BuildpackYAML{}, err
+			return BuildpackYAML{}, map[string]string{}, err
 		}
 
 		err = yaml.Unmarshal(contents, &buildpackYAML)
 		if err != nil {
-			return BuildpackYAML{}, err
+			return BuildpackYAML{}, map[string]string{}, err
 		}
 	}
+	configMapping, finalBuildpackYAML := yamlConfig(buildpackYAML)
+	return finalBuildpackYAML, configMapping, nil
+}
 
-	//TODO: valid WebServer
+// Get map of config fields set by buildpack.yml and also set default values for any empty fields
+func yamlConfig(buildpackYAML BuildpackYAML) (map[string]string, BuildpackYAML) {
+	fieldMapping := map[string]string{}
 
-	return buildpackYAML, nil
+	if buildpackYAML.Config.Version != "" {
+		fieldMapping["version"] = "BP_PHP_VERSION"
+	}
+	if buildpackYAML.Config.LibDirectory != "" {
+		fieldMapping["lib directory"] = "BP_PHP_LIB_DIR"
+	} else {
+		buildpackYAML.Config.LibDirectory = "lib"
+	}
+	if buildpackYAML.Config.WebDirectory != "" {
+		fieldMapping["web directory"] = "BP_PHP_WEB_DIR"
+	} else {
+		buildpackYAML.Config.WebDirectory = "htdocs"
+	}
+	if buildpackYAML.Config.WebServer != "" {
+		fieldMapping["web server"] = "BP_PHP_SERVER"
+	} else {
+		buildpackYAML.Config.WebServer = PhpWebServer
+	}
+	if buildpackYAML.Config.ServerAdmin != "" {
+		fieldMapping["server admin"] = "BP_PHP_SERVER_ADMIN"
+	} else {
+		buildpackYAML.Config.ServerAdmin = "admin@localhost"
+	}
+	if buildpackYAML.Config.Redis.SessionStoreServiceName != "" {
+		fieldMapping["redis session store service name"] = "service binding"
+	} else {
+		buildpackYAML.Config.Redis.SessionStoreServiceName = "redis-sessions"
+	}
+	if buildpackYAML.Config.Memcached.SessionStoreServiceName != "" {
+		fieldMapping["memcache session store service name"] = "service binding"
+	} else {
+		buildpackYAML.Config.Memcached.SessionStoreServiceName = "memcached-sessions"
+	}
+	if buildpackYAML.Config.Script != "" {
+		fieldMapping["scripts"] = "Procfile"
+	}
+	return fieldMapping, buildpackYAML
 }
 
 func PickWebDir(buildpackYAML BuildpackYAML) string {

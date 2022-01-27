@@ -73,7 +73,7 @@ func searchForAnyPHPFiles(appRoot string, log logger.Logger) (bool, error) {
 }
 
 func runDetect(context detect.Detect) (int, error) {
-	buildpackYAML, err := config.LoadBuildpackYAML(context.Application.Root)
+	buildpackYAML, _, err := config.LoadBuildpackYAML(context.Application.Root)
 	if err != nil {
 		return context.Fail(), err
 	}
