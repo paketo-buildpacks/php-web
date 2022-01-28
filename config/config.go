@@ -185,7 +185,7 @@ func WarnBuildpackYAML(logger logger.Logger, version, appRoot string) error {
 	}
 
 	nextMajorVersion := semver.MustParse(version).IncMajor()
-	logger.BodyWarning("WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v%s.", nextMajorVersion.String())
+	logger.BodyWarning("WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v%s.", nextMajorVersion.String())
 	logger.BodyWarning("Buildpack.yml values will be replaced by environment variables in the next major version:")
 
 	for field, envVar := range fieldMapping {
