@@ -258,7 +258,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 			logger := logger.Logger{Logger: bp.NewLogger(buf, buf)}
 			Expect(WarnBuildpackYAML(logger, "1.2.3", f.Detect.Application.Root)).To(Succeed())
-			Expect(buf.String()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(buf.String()).To(ContainSubstring(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v2.0.0.`))
 			Expect(buf.String()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(buf.String()).To(ContainSubstring("php.version -> BP_PHP_VERSION"))
 			Expect(buf.String()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
