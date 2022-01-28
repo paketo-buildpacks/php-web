@@ -62,6 +62,11 @@ func NewContributor(context build.Build) (Contributor, bool, error) {
 	}
 	context.Logger.Debug("Build Pack YAML: %v", buildpackYAML)
 
+	err = config.WarnBuildpackYAML(context.Logger, context.Buildpack.Info.Version, context.Application.Root)
+	if err != nil {
+		return Contributor{}, false, err
+	}
+
 	randomHash, err := generateRandomHash()
 	if err != nil {
 		return Contributor{}, false, err
