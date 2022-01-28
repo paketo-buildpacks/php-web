@@ -123,7 +123,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
