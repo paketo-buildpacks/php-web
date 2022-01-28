@@ -252,7 +252,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 				'redis': {'session_store_service_name': 'redis-session-store-name'},
 				'memcached': {'session_store_service_name': 'memcached-session-store-name'}
 		}}`
-			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
+			test.WriteFile(t, filepath.Join(f.Build.Application.Root, "buildpack.yml"), yaml)
 
 			buf := bytes.NewBuffer(nil)
 
