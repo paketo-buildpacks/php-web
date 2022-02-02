@@ -146,6 +146,19 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(resp).To(ContainSubstring("ServerMPM: event"))
 		})
 
+		it("serves a simple php page with httpd and custom fpm config", func() {
+			app, err = PushSimpleApp("simple_app_custom_fpm_cfg", []string{httpdURI, phpDistURI, phpWebURI}, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- PhpFpm"))
+			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
+			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
+
+			resp, _, err := app.HTTPGet("/status.php")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp).To(MatchRegexp(`process manager:\s+static`))
+		})
+
 		it("serves a simple php page with nginx", func() {
 			app, err = PushSimpleApp("simple_app_nginx", []string{nginxURI, phpDistURI, phpWebURI}, false)
 			Expect(err).NotTo(HaveOccurred())
