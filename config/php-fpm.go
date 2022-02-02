@@ -135,14 +135,6 @@ daemonize = no
 ; used in logs and stats. There is no limitation on the number of pools which
 ; FPM can handle. Your system will tell you anyway :)
 
-; Include one or more files. If glob(3) exists, it is used to include a bunch of
-; files from a glob(3) pattern. This directive can be used everywhere in the
-; file.
-; Relative path can also be used. They will be prefixed by:
-;  - the global prefix if it's been set (-p argument)
-;  - @prefix@ otherwise
-include={{.Include}}
-
 [www]
 ; Per pool prefix
 ; It only applies on the following directives:
@@ -535,4 +527,12 @@ clear_env = no
 ;php_admin_value[error_log] = /var/log/fpm-php.www.log
 ;php_admin_flag[log_errors] = on
 ;php_admin_value[memory_limit] = 32M
+
+; Include one or more files. If glob(3) exists, it is used to include a bunch of
+; files from a glob(3) pattern. This directive can be used everywhere in the
+; file.
+; Relative path can also be used. They will be prefixed by:
+;  - the global prefix if it's been set (-p argument)
+;  - @prefix@ otherwise
+include={{.Include}}
 `
