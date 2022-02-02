@@ -276,7 +276,7 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 				buf := bytes.NewBuffer(nil)
 				logger := logger.Logger{Logger: bp.NewLogger(buf, buf)}
 				Expect(WarnBuildpackYAML(logger, "1.2.3", f.Detect.Application.Root)).To(Succeed())
-				Expect(buf.String()).NotTo(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+				Expect(buf.String()).NotTo(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			})
 		})
 	})

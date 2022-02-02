@@ -143,7 +143,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Apache Web Server"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Apache HTTP Server Buildpack (v?)\d+.\d+.\d+`))
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
@@ -159,7 +159,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
@@ -179,7 +179,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.BuildLogs()).To(ContainSubstring("Using feature -- Nginx"))
 			Expect(app.BuildLogs()).To(ContainSubstring(fmt.Sprintf("web: procmgr /layers/%s/php-web/procs.yml", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))))
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing Nginx Server \d+.\d+.\d+`))
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
@@ -208,7 +208,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err := PushSimpleApp("simple_cli_app_with_args", []string{phpDistURI, phpWebURI}, true)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.script -> use a Procfile"))
 			logs, err := app.Logs()
@@ -222,7 +222,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			app, err = PreparePhpApp("php_modules", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			app.SetHealthCheck("true", "3s", "1s")
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 			err := app.Start()
@@ -256,7 +256,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		it("does not return the version of PHP in the response headers", func() {
 			app, err = PreparePhpApp("php_app", []string{phpDistURI, phpWebURI}, nil)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
@@ -299,7 +299,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			// ensure correct version of PHP is installed
 			Expect(app.BuildLogs()).To(MatchRegexp(`Installing PHP 7\.4\.\d+`))
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 		})
@@ -349,7 +349,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			err = app.Start()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting the PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			Expect(app.BuildLogs()).To(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
 			Expect(app.BuildLogs()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
 			Expect(app.BuildLogs()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
 
