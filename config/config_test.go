@@ -17,10 +17,13 @@
 package config
 
 import (
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	bp "github.com/buildpack/libbuildpack/logger"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -234,6 +237,47 @@ func testPhpAppConfig(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(err).To(Succeed())
 			Expect(loaded).To(Equal(actual))
+		})
+
+		it("logs a warning against user-set buildpack.yml config", func() {
+			yaml := `{'php':
+			{
+				'version': 1.0.0,
+				'webserver': 'httpd',
+				'serveradmin': 'admin@example.com',
+				'libdirectory': 'some-libdir',
+				'webdirectory': 'some-webdir',
+				'script': 'some-script',
+				'enable_https_redirect': true,
+				'redis': {'session_store_service_name': 'redis-session-store-name'},
+				'memcached': {'session_store_service_name': 'memcached-session-store-name'}
+		}}`
+			test.WriteFile(t, filepath.Join(f.Detect.Application.Root, "buildpack.yml"), yaml)
+
+			buf := bytes.NewBuffer(nil)
+
+			logger := logger.Logger{Logger: bp.NewLogger(buf, buf)}
+			Expect(WarnBuildpackYAML(logger, "1.2.3", f.Detect.Application.Root)).To(Succeed())
+			Expect(buf.String()).To(ContainSubstring(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v2.0.0.`))
+			Expect(buf.String()).To(ContainSubstring("Buildpack.yml values will be replaced by environment variables in the next major version:"))
+			Expect(buf.String()).To(ContainSubstring("php.version -> BP_PHP_VERSION"))
+			Expect(buf.String()).To(ContainSubstring("php.webserver -> BP_PHP_SERVER"))
+			Expect(buf.String()).To(ContainSubstring("php.serveradmin -> BP_PHP_SERVER_ADMIN"))
+			Expect(buf.String()).To(ContainSubstring("php.libdirectory -> BP_PHP_LIB_DIR"))
+			Expect(buf.String()).To(ContainSubstring("php.webdirectory -> BP_PHP_WEB_DIR"))
+			Expect(buf.String()).To(ContainSubstring("php.script -> use a Procfile"))
+			Expect(buf.String()).To(ContainSubstring("php.enable_https_redirect -> BP_PHP_ENABLE_HTTPS_REDIRECT"))
+			Expect(buf.String()).To(ContainSubstring("php.redis.session_store_service_name -> use a service binding"))
+			Expect(buf.String()).To(ContainSubstring("php.memcached.session_store_service_name -> use a service binding"))
+		})
+
+		when("the buildpack.yml is empty", func() {
+			it("does not log a warning against user-set buildpack.yml config", func() {
+				buf := bytes.NewBuffer(nil)
+				logger := logger.Logger{Logger: bp.NewLogger(buf, buf)}
+				Expect(WarnBuildpackYAML(logger, "1.2.3", f.Detect.Application.Root)).To(Succeed())
+				Expect(buf.String()).NotTo(MatchRegexp(`WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v\d+.\d+.\d+.`))
+			})
 		})
 	})
 

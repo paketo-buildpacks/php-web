@@ -25,7 +25,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/Masterminds/semver"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 )
 
 const (
@@ -121,6 +123,76 @@ type Redis struct {
 // Memcached represents PHP Memcached specific configuration options for `buildpack.yml`
 type Memcached struct {
 	SessionStoreServiceName string `yaml:"session_store_service_name"`
+}
+
+func WarnBuildpackYAML(logger logger.Logger, version, appRoot string) error {
+	buildpackYAML, configFile := BuildpackYAML{}, filepath.Join(appRoot, "buildpack.yml")
+	var (
+		exists bool
+		err    error
+	)
+	if exists, err = helper.FileExists(configFile); err != nil {
+		return err
+	}
+
+	if !exists {
+		return nil
+	}
+
+	file, err := os.Open(configFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	contents, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(contents, &buildpackYAML)
+	if err != nil {
+		return err
+	}
+
+	fieldMapping := map[string]string{}
+	if buildpackYAML.Config.Version != "" {
+		fieldMapping["php.version"] = "BP_PHP_VERSION"
+	}
+	if buildpackYAML.Config.LibDirectory != "" {
+		fieldMapping["php.libdirectory"] = "BP_PHP_LIB_DIR"
+	}
+	if buildpackYAML.Config.WebDirectory != "" {
+		fieldMapping["php.webdirectory"] = "BP_PHP_WEB_DIR"
+	}
+	if buildpackYAML.Config.WebServer != "" {
+		fieldMapping["php.webserver"] = "BP_PHP_SERVER"
+	}
+	if buildpackYAML.Config.ServerAdmin != "" {
+		fieldMapping["php.serveradmin"] = "BP_PHP_SERVER_ADMIN"
+	}
+	if buildpackYAML.Config.Redis.SessionStoreServiceName != "" {
+		fieldMapping["php.redis.session_store_service_name"] = "use a service binding"
+	}
+	if buildpackYAML.Config.Memcached.SessionStoreServiceName != "" {
+		fieldMapping["php.memcached.session_store_service_name"] = "use a service binding"
+	}
+	if buildpackYAML.Config.Script != "" {
+		fieldMapping["php.script"] = "use a Procfile"
+	}
+	if buildpackYAML.Config.EnableHTTPSRedirect {
+		fieldMapping["php.enable_https_redirect"] = "BP_PHP_ENABLE_HTTPS_REDIRECT"
+	}
+
+	nextMajorVersion := semver.MustParse(version).IncMajor()
+	logger.BodyWarning("WARNING: Setting PHP configurations through buildpack.yml will be deprecated soon in buildpack v%s.", nextMajorVersion.String())
+	logger.BodyWarning("Buildpack.yml values will be replaced by environment variables in the next major version:")
+
+	for field, envVar := range fieldMapping {
+		logger.BodyWarning("  %s -> %s", field, envVar)
+	}
+
+	return nil
 }
 
 // LoadBuildpackYAML reads `buildpack.yml` and PHP specific config options in it
