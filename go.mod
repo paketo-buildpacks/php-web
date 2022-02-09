@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/onsi/gomega v1.18.1
-	github.com/paketo-buildpacks/occam v0.3.0
+	github.com/paketo-buildpacks/occam v0.4.0
 	github.com/paketo-buildpacks/packit v1.3.1
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
