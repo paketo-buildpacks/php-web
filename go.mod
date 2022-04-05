@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	cloud.google.com/go/compute v1.1.0 // indirect
-	github.com/BurntSushi/toml v1.0.0
+	github.com/BurntSushi/toml v1.1.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/buildpack/libbuildpack v1.25.11
 	github.com/cloudfoundry/dagger v0.0.0-20210428225900-2d0bc365c71a
