@@ -83,4 +83,4 @@ This buildpack is released under version 2.0 of the [Apache License][a].
 
 If you like to configure custom .ini files in addition to the `php.ini`
 provided by the buildpack, you can create a directory named `.php.ini.d` at the
-root of your app and add your custom ini files there.
+root of your app and add your custom .ini files there.
